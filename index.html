@@ -19,7 +19,6 @@
             line-height: 1.6;
         }
 
-        /* 顶部导航栏 */
         .header {
             background: linear-gradient(135deg, #00a1d6 0%, #0084ff 100%);
             color: white;
@@ -51,7 +50,6 @@
             font-size: 28px;
         }
 
-        /* 搜索框 */
         .search-bar {
             display: flex;
             flex: 0 1 400px;
@@ -81,7 +79,6 @@
             background: white;
         }
 
-        /* 上传按钮 */
         .upload-btn {
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.3);
@@ -104,7 +101,26 @@
             margin-right: 6px;
         }
 
-        /* 上传模态框 */
+        .storage-info {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-right: 15px;
+        }
+
+        .storage-warning {
+            background: #ff6b6b;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
         .upload-modal {
             display: none;
             position: fixed;
@@ -171,7 +187,6 @@
             color: #333;
         }
 
-        /* 文件拖放区域 */
         .file-drop-zone {
             border: 2px dashed #ddd;
             border-radius: 8px;
@@ -221,7 +236,6 @@
             font-size: 12px;
         }
 
-        /* 表单样式 */
         .upload-form {
             padding: 0 24px 24px;
         }
@@ -242,7 +256,7 @@
             color: #00a1d6;
         }
 
-        .form-group input {
+        .form-group input, .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -251,13 +265,12 @@
             transition: border-color 0.3s ease;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: #00a1d6;
             box-shadow: 0 0 0 2px rgba(0, 161, 214, 0.1);
         }
 
-        /* 表单操作按钮 */
         .form-actions {
             display: flex;
             gap: 12px;
@@ -306,7 +319,6 @@
             margin-right: 6px;
         }
 
-        /* 主体内容区 */
         .main-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -317,7 +329,6 @@
             justify-content: center;
         }
 
-        /* 空状态样式 */
         .empty-state {
             text-align: center;
             color: #999;
@@ -330,7 +341,6 @@
             max-width: 400px;
         }
 
-        /* 视频网格 */
         .video-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -355,7 +365,7 @@
         .video-thumbnail {
             position: relative;
             width: 100%;
-            padding-bottom: 56.25%; /* 16:9 比例 */
+            padding-bottom: 56.25%;
             background: #f5f5f5;
             overflow: hidden;
         }
@@ -421,7 +431,6 @@
             color: #999;
         }
 
-        /* 排序选项 */
         .sort-options {
             margin-bottom: 24px;
             display: none;
@@ -433,6 +442,151 @@
             border-radius: 6px;
             background: white;
             font-size: 14px;
+        }
+
+        /* 视频播放页样式 */
+        .video-player-page {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .video-player-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        .video-player {
+            width: 100%;
+            background: #000;
+            position: relative;
+        }
+
+        .video-player video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .player-controls {
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .speed-control {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .action-btn.active {
+            color: #00a1d6;
+        }
+
+        .video-details {
+            padding: 20px;
+        }
+
+        .video-details h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .video-stats {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .comments-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .comment-form {
+            margin-bottom: 20px;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .submit-comment {
+            background: #00a1d6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .comments-list {
+            space-y: 15px;
+        }
+
+        .comment {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .comment:last-child {
+            border-bottom: none;
+        }
+
+        .back-btn {
+            background: #00a1d6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
     </style>
 </head>
@@ -450,7 +604,11 @@
                 <button class="search-btn"><i class="fas fa-search"></i></button>
             </div>
 
-            <div class="upload-section">
+            <div class="upload-section" style="display: flex; align-items: center;">
+                <div class="storage-info" id="storageInfo">
+                    <i class="fas fa-hdd"></i>
+                    <span>存储: 计算中...</span>
+                </div>
                 <button class="upload-btn" id="uploadBtn">
                     <i class="fas fa-plus"></i>
                     <span>上传视频</span>
@@ -467,7 +625,6 @@
                 <button class="close-btn" id="closeModal">&times;</button>
             </div>
             <form id="uploadForm" class="upload-form">
-                <!-- 文件选择区域 -->
                 <div class="file-drop-zone" id="fileDropZone">
                     <i class="fas fa-video"></i>
                     <p>点击选择视频文件或拖拽到此处</p>
@@ -478,13 +635,16 @@
                     </div>
                 </div>
                 
-                <!-- 标题输入 -->
                 <div class="form-group">
                     <label for="videoTitle"><i class="fas fa-heading"></i> 视频标题</label>
                     <input type="text" id="videoTitle" placeholder="请输入视频标题..." required>
                 </div>
 
-                <!-- 上传按钮 -->
+                <div class="form-group">
+                    <label for="videoDescription"><i class="fas fa-align-left"></i> 视频描述</label>
+                    <textarea id="videoDescription" placeholder="请输入视频描述（可选）" rows="3"></textarea>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" id="cancelUpload" class="cancel-btn">取消</button>
                     <button type="submit" class="submit-btn" id="submitBtn" disabled>
@@ -495,15 +655,95 @@
         </div>
     </div>
 
-    <!-- 主体内容区 -->
-    <main class="main-container">
+    <!-- 主页内容区 -->
+    <main class="main-container" id="mainPage">
         <div class="empty-state">
             无视频
         </div>
     </main>
 
+    <!-- 视频播放页面 -->
+    <div class="video-player-page" id="videoPage">
+        <button class="back-btn" id="backBtn">
+            <i class="fas fa-arrow-left"></i>
+            返回首页
+        </button>
+        
+        <div class="video-player-container">
+            <div class="video-player">
+                <video id="mainVideo" controls>
+                    您的浏览器不支持 HTML5 视频标签。
+                </video>
+                <div class="player-controls">
+                    <select class="speed-control" id="speedControl">
+                        <option value="0.25">0.25x</option>
+                        <option value="0.5">0.5x</option>
+                        <option value="1" selected>1x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="2">2x</option>
+                        <option value="3">3x</option>
+                        <option value="4">4x</option>
+                    </select>
+                    <div class="video-actions">
+                        <button class="action-btn" id="likeBtn">
+                            <i class="far fa-thumbs-up"></i>
+                            <span id="likeCount">0</span>
+                        </button>
+                        <button class="action-btn" id="dislikeBtn">
+                            <i class="far fa-thumbs-down"></i>
+                            <span id="dislikeCount">0</span>
+                        </button>
+                        <button class="action-btn" id="shareBtn">
+                            <i class="fas fa-share"></i>
+                            分享
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="video-details">
+                <h1 id="videoPageTitle">视频标题</h1>
+                <div class="video-stats">
+                    <span id="videoUploadTime">上传时间</span>
+                    <span id="videoViews">0 次播放</span>
+                    <span id="videoSize">文件大小</span>
+                </div>
+                <p id="videoPageDescription">视频描述</p>
+            </div>
+        </div>
+
+        <div class="comments-section">
+            <h3>评论区</h3>
+            <div class="comment-form">
+                <textarea class="comment-input" id="commentInput" placeholder="写下你的评论..."></textarea>
+                <button class="submit-comment" id="submitComment">发布评论</button>
+            </div>
+            <div class="comments-list" id="commentsList">
+                <!-- 评论将动态加载 here -->
+            </div>
+        </div>
+    </div>
+
     <script>
-        // DOM 元素
+        // ==================== 配置信息 ====================
+        const R2_CONFIG = {
+            accessKeyId: 'f594e10953f9ec122d430f064a19b5b4',
+            secretAccessKey: '9ed7b12db60f31f9462caec00b7080918e3888365df70&c5fa7e0d49723f2dc',
+            endpoint: 'https://1cdc780ead6a1ae7e3931e043874700e.r2.cloudflarestorage.com',
+            bucket: 'adc'
+        };
+
+        const D1_CONFIG = {
+            databaseId: 'c9d45ec9-127c-48c5-8b77-3c58c6ebded0',
+            accountId: '1cdc780ead6a1ae7e3931e043874700e',
+            apiToken: 'k51ruznXy8h6eU07_PKKySYajtmXLPS23JyCXk_M'
+        };
+
+        // ==================== 全局变量 ====================
+        let currentVideos = [];
+        let currentVideoId = null;
+
+        // ==================== DOM 元素 ====================
         const uploadBtn = document.getElementById('uploadBtn');
         const uploadModal = document.getElementById('uploadModal');
         const closeModal = document.getElementById('closeModal');
@@ -515,16 +755,78 @@
         const fileName = document.getElementById('fileName');
         const fileSize = document.getElementById('fileSize');
         const videoTitleInput = document.getElementById('videoTitle');
+        const videoDescriptionInput = document.getElementById('videoDescription');
         const submitBtn = document.getElementById('submitBtn');
-        const mainContainer = document.querySelector('.main-container');
+        const mainContainer = document.getElementById('mainPage');
+        const videoPage = document.getElementById('videoPage');
+        const backBtn = document.getElementById('backBtn');
+        const mainVideo = document.getElementById('mainVideo');
+        const speedControl = document.getElementById('speedControl');
+        const likeBtn = document.getElementById('likeBtn');
+        const dislikeBtn = document.getElementById('dislikeBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const likeCount = document.getElementById('likeCount');
+        const dislikeCount = document.getElementById('dislikeCount');
+        const videoPageTitle = document.getElementById('videoPageTitle');
+        const videoUploadTime = document.getElementById('videoUploadTime');
+        const videoViews = document.getElementById('videoViews');
+        const videoSize = document.getElementById('videoSize');
+        const videoPageDescription = document.getElementById('videoPageDescription');
+        const commentInput = document.getElementById('commentInput');
+        const submitComment = document.getElementById('submitComment');
+        const commentsList = document.getElementById('commentsList');
+        const storageInfo = document.getElementById('storageInfo');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.querySelector('.search-btn');
 
-        // 打开上传模态框
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStorageUsage();
+            loadVideos();
+            
+            // 每5分钟检查一次存储使用情况
+            setInterval(checkStorageUsage, 300000);
+        });
+
+        // ==================== 存储容量监控 ====================
+        async function checkStorageUsage() {
+            try {
+                // 这里简化处理，实际应该调用 R2 API 获取存储使用量
+                const usage = await estimateStorageUsage();
+                const usageGB = (usage / (1024 * 1024 * 1024)).toFixed(2);
+                
+                storageInfo.innerHTML = `<i class="fas fa-hdd"></i> 存储: ${usageGB}GB/10GB`;
+                
+                if (usageGB >= 9.5) {
+                    storageInfo.classList.add('storage-warning');
+                    showStorageWarning();
+                } else {
+                    storageInfo.classList.remove('storage-warning');
+                }
+            } catch (error) {
+                console.error('检查存储使用量失败:', error);
+            }
+        }
+
+        async function estimateStorageUsage() {
+            // 简化版本：从本地存储估算
+            // 实际应该调用 R2 API 的 list 或 metrics 接口
+            return 0; // 暂时返回0，后续完善
+        }
+
+        function showStorageWarning() {
+            if (!localStorage.getItem('storage_warning_shown')) {
+                alert('⚠️ 存储空间即将满额！当前使用量已超过9.5GB，请及时清理空间。');
+                localStorage.setItem('storage_warning_shown', 'true');
+            }
+        }
+
+        // ==================== 上传功能 ====================
         uploadBtn.addEventListener('click', () => {
             uploadModal.style.display = 'block';
             document.body.style.overflow = 'hidden';
         });
 
-        // 关闭上传模态框
         function closeUploadModal() {
             uploadModal.style.display = 'none';
             document.body.style.overflow = 'auto';
@@ -534,19 +836,16 @@
         closeModal.addEventListener('click', closeUploadModal);
         cancelUpload.addEventListener('click', closeUploadModal);
 
-        // 点击模态框外部关闭
         uploadModal.addEventListener('click', (e) => {
             if (e.target === uploadModal) {
                 closeUploadModal();
             }
         });
 
-        // 文件选择处理
         fileDropZone.addEventListener('click', () => {
             videoFileInput.click();
         });
 
-        // 拖放功能
         fileDropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             fileDropZone.classList.add('dragover');
@@ -566,17 +865,23 @@
             }
         });
 
-        // 文件选择变化
         videoFileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 handleFileSelect(e.target.files[0]);
             }
         });
 
-        // 处理文件选择
         function handleFileSelect(file) {
+            // 文件类型检查
             if (!file.type.startsWith('video/')) {
                 alert('请选择视频文件！');
+                return;
+            }
+
+            // 文件大小检查 (100MB限制)
+            const maxSize = 100 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('视频文件太大，请选择小于100MB的文件');
                 return;
             }
 
@@ -588,12 +893,11 @@
             // 启用提交按钮
             submitBtn.disabled = false;
             
-            // 自动填充标题（去除扩展名）
+            // 自动填充标题
             const title = file.name.replace(/\.[^/.]+$/, "");
             videoTitleInput.value = title;
         }
 
-        // 格式化文件大小
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -602,54 +906,156 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // 重置表单
         function resetForm() {
             uploadForm.reset();
             fileInfo.style.display = 'none';
             submitBtn.disabled = true;
         }
 
-        // 表单提交
+        // ==================== 上传处理 ====================
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const file = videoFileInput.files[0];
             const title = videoTitleInput.value.trim();
+            const description = videoDescriptionInput.value.trim();
             
             if (!file || !title) {
                 alert('请选择视频文件并填写标题！');
                 return;
             }
 
-            // 模拟上传成功
-            alert('视频上传成功！');
-            closeUploadModal();
-            
-            // 上传成功后创建视频网格
-            createVideoGrid();
-            
-            // 这里后面会连接真实的后端上传
-            console.log('准备上传:', {
-                file: file.name,
-                title: title,
-                size: file.size
-            });
+            try {
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+                submitBtn.disabled = true;
+
+                // 检查存储空间
+                const usage = await estimateStorageUsage();
+                if (usage + file.size > 10 * 1024 * 1024 * 1024) {
+                    alert('存储空间不足，无法上传视频');
+                    return;
+                }
+
+                // 生成唯一文件名
+                const fileExt = file.name.split('.').pop();
+                const objectKey = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+                // 上传到 R2
+                await uploadToR2(file, objectKey);
+
+                // 保存到 D1 数据库
+                await saveVideoToD1({
+                    filename: file.name,
+                    file_size: file.size,
+                    r2_object_key: objectKey,
+                    title: title,
+                    description: description,
+                    mime_type: file.type
+                });
+
+                alert('视频上传成功！');
+                closeUploadModal();
+                loadVideos();
+                checkStorageUsage();
+
+            } catch (error) {
+                console.error('上传失败:', error);
+                alert('上传失败：' + error.message);
+            } finally {
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> 开始上传';
+                submitBtn.disabled = false;
+            }
         });
 
-        // 创建视频网格（模拟）
-        function createVideoGrid() {
-            // 移除空状态
+        // ==================== R2 上传函数 ====================
+        async function uploadToR2(file, objectKey) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${R2_CONFIG.endpoint}/${R2_CONFIG.bucket}/${objectKey}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Basic ${btoa(`${R2_CONFIG.accessKeyId}:${R2_CONFIG.secretAccessKey}`)}`
+                    },
+                    body: file
+                });
+
+                if (!response.ok) {
+                    throw new Error('R2 上传失败');
+                }
+
+                return objectKey;
+            } catch (error) {
+                throw new Error('R2 上传失败: ' + error.message);
+            }
+        }
+
+        // ==================== D1 数据库操作 ====================
+        async function saveVideoToD1(videoData) {
+            const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${D1_CONFIG.accountId}/d1/database/${D1_CONFIG.databaseId}/query`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${D1_CONFIG.apiToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sql: `INSERT INTO videos (filename, file_size, r2_object_key, title, description, mime_type, uploaded_at) 
+                          VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+                    params: [
+                        videoData.filename,
+                        videoData.file_size,
+                        videoData.r2_object_key,
+                        videoData.title,
+                        videoData.description || '',
+                        videoData.mime_type
+                    ]
+                })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error('数据库保存失败');
+            }
+        }
+
+        async function loadVideos() {
+            try {
+                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${D1_CONFIG.accountId}/d1/database/${D1_CONFIG.databaseId}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${D1_CONFIG.apiToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sql: "SELECT * FROM videos ORDER BY uploaded_at DESC"
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success && result.result.length > 0) {
+                    currentVideos = result.result;
+                    displayVideos(currentVideos);
+                } else {
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('加载视频失败:', error);
+                showEmptyState();
+            }
+        }
+
+        // ==================== 视频显示功能 ====================
+        function displayVideos(videos) {
             const emptyState = document.querySelector('.empty-state');
             if (emptyState) {
                 emptyState.remove();
             }
-            
-            // 创建视频网格容器
+
             const videoGrid = document.createElement('div');
             videoGrid.className = 'video-grid';
             videoGrid.id = 'videoGrid';
-            
-            // 创建排序选项
+
             const sortOptions = document.createElement('div');
             sortOptions.className = 'sort-options';
             sortOptions.id = 'sortOptions';
@@ -660,30 +1066,245 @@
                     <option value="name">按标题排序</option>
                 </select>
             `;
-            
-            // 创建示例视频卡片
-            const videoCard = document.createElement('div');
-            videoCard.className = 'video-card';
-            videoCard.innerHTML = `
-                <div class="video-thumbnail">
-                    <div class="play-overlay">
-                        <i class="fas fa-play"></i>
+
+            videos.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.setAttribute('data-video-id', video.id);
+                videoCard.innerHTML = `
+                    <div class="video-thumbnail">
+                        <div class="play-overlay">
+                            <i class="fas fa-play"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="video-info">
-                    <h3 class="video-title">${videoTitleInput.value}</h3>
-                    <div class="video-meta">
-                        <span class="upload-time">刚刚</span>
+                    <div class="video-info">
+                        <h3 class="video-title">${escapeHtml(video.title)}</h3>
+                        <div class="video-meta">
+                            <span class="upload-time">${formatTime(video.uploaded_at)}</span>
+                        </div>
                     </div>
-                </div>
-            `;
-            
-            // 组装页面
+                `;
+
+                videoCard.addEventListener('click', () => {
+                    playVideo(video);
+                });
+
+                videoGrid.appendChild(videoCard);
+            });
+
             mainContainer.innerHTML = '';
             mainContainer.appendChild(sortOptions);
-            videoGrid.appendChild(videoCard);
             mainContainer.appendChild(videoGrid);
+
+            // 排序功能
+            const sortSelect = document.getElementById('sortSelect');
+            sortSelect.addEventListener('change', (e) => {
+                const sortedVideos = [...videos];
+                if (e.target.value === 'name') {
+                    sortedVideos.sort((a, b) => a.title.localeCompare(b.title));
+                } else {
+                    sortedVideos.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
+                }
+                displayVideos(sortedVideos);
+            });
+        }
+
+        function showEmptyState() {
+            mainContainer.innerHTML = '<div class="empty-state">无视频</div>';
+        }
+
+        // ==================== 视频播放功能 ====================
+        function playVideo(video) {
+            currentVideoId = video.id;
+            
+            // 更新视频页面信息
+            videoPageTitle.textContent = video.title;
+            videoPageDescription.textContent = video.description || '暂无描述';
+            videoUploadTime.textContent = `上传时间: ${formatTime(video.uploaded_at)}`;
+            videoSize.textContent = `文件大小: ${formatFileSize(video.file_size)}`;
+            
+            // 设置视频源
+            const videoUrl = `${R2_CONFIG.endpoint}/${R2_CONFIG.bucket}/${video.r2_object_key}`;
+            mainVideo.src = videoUrl;
+            
+            // 切换到视频页面
+            mainContainer.style.display = 'none';
+            videoPage.style.display = 'block';
+            
+            // 加载评论
+            loadComments(video.id);
+            
+            // 更新播放次数
+            updateVideoViews(video.id);
+        }
+
+        backBtn.addEventListener('click', () => {
+            videoPage.style.display = 'none';
+            mainContainer.style.display = 'block';
+            mainVideo.pause();
+            mainVideo.src = '';
+        });
+
+        // ==================== 播放器控制 ====================
+        speedControl.addEventListener('change', (e) => {
+            mainVideo.playbackRate = parseFloat(e.target.value);
+        });
+
+        likeBtn.addEventListener('click', () => {
+            likeBtn.classList.toggle('active');
+            likeBtn.querySelector('i').classList.toggle('far');
+            likeBtn.querySelector('i').classList.toggle('fas');
+            if (likeBtn.classList.contains('active')) {
+                likeCount.textContent = parseInt(likeCount.textContent) + 1;
+            } else {
+                likeCount.textContent = parseInt(likeCount.textContent) - 1;
+            }
+        });
+
+        dislikeBtn.addEventListener('click', () => {
+            dislikeBtn.classList.toggle('active');
+            dislikeBtn.querySelector('i').classList.toggle('far');
+            dislikeBtn.querySelector('i').classList.toggle('fas');
+            if (dislikeBtn.classList.contains('active')) {
+                dislikeCount.textContent = parseInt(dislikeCount.textContent) + 1;
+            } else {
+                dislikeCount.textContent = parseInt(dislikeCount.textContent) - 1;
+            }
+        });
+
+        shareBtn.addEventListener('click', () => {
+            const videoUrl = window.location.href.split('?')[0] + `?video=${currentVideoId}`;
+            navigator.clipboard.writeText(videoUrl).then(() => {
+                alert('视频链接已复制到剪贴板！');
+            });
+        });
+
+        // ==================== 评论功能 ====================
+        submitComment.addEventListener('click', async () => {
+            const commentText = commentInput.value.trim();
+            if (!commentText) {
+                alert('请输入评论内容');
+                return;
+            }
+
+            if (!currentVideoId) {
+                alert('请先选择视频');
+                return;
+            }
+
+            try {
+                // 保存评论到本地存储（简化处理）
+                saveComment(currentVideoId, commentText);
+                commentInput.value = '';
+                loadComments(currentVideoId);
+            } catch (error) {
+                console.error('发布评论失败:', error);
+                alert('发布评论失败');
+            }
+        });
+
+        function saveComment(videoId, comment) {
+            const comments = JSON.parse(localStorage.getItem(`comments_${videoId}`) || '[]');
+            comments.push({
+                id: Date.now(),
+                text: comment,
+                time: new Date().toISOString(),
+                author: '用户'
+            });
+            localStorage.setItem(`comments_${videoId}`, JSON.stringify(comments));
+        }
+
+        function loadComments(videoId) {
+            const comments = JSON.parse(localStorage.getItem(`comments_${videoId}`) || '[]');
+            commentsList.innerHTML = '';
+
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<div class="comment">暂无评论</div>';
+                return;
+            }
+
+            comments.forEach(comment => {
+                const commentElement = document.createElement('div');
+                commentElement.className = 'comment';
+                commentElement.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 5px;">${comment.author}</div>
+                    <div style="margin-bottom: 5px;">${escapeHtml(comment.text)}</div>
+                    <div style="font-size: 12px; color: #666;">${formatTime(comment.time)}</div>
+                `;
+                commentsList.appendChild(commentElement);
+            });
+        }
+
+        // ==================== 工具函数 ====================
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+            
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        async function updateVideoViews(videoId) {
+            // 简化处理：更新本地存储的播放次数
+            const views = JSON.parse(localStorage.getItem('video_views') || '{}');
+            views[videoId] = (views[videoId] || 0) + 1;
+            localStorage.setItem('video_views', JSON.stringify(views));
+            
+            const videoViews = views[videoId] || 0;
+            document.getElementById('videoViews').textContent = `${videoViews} 次播放`;
+        }
+
+        // ==================== 搜索功能 ====================
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        function performSearch() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            if (!searchTerm) {
+                loadVideos();
+                return;
+            }
+
+            const filteredVideos = currentVideos.filter(video => 
+                video.title.toLowerCase().includes(searchTerm) ||
+                (video.description && video.description.toLowerCase().includes(searchTerm))
+            );
+
+            if (filteredVideos.length === 0) {
+                mainContainer.innerHTML = '<div class="empty-state">未找到相关视频</div>';
+            } else {
+                displayVideos(filteredVideos);
+            }
+        }
+
+        // ==================== 文件类型智能识别 ====================
+        function detectFileType(file) {
+            const videoTypes = {
+                'video/mp4': 'MP4',
+                'video/mpeg': 'MPEG',
+                'video/ogg': 'OGG',
+                'video/webm': 'WebM',
+                'video/quicktime': 'MOV',
+                'video/x-msvideo': 'AVI'
+            };
+            
+            return videoTypes[file.type] || '未知格式';
         }
     </script>
 </body>
-</html>.
+</html>
