@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>玉兔云 - 个人视频空间</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            background: linear-gradient(135deg, #00a1d6 0%, #0084ff 100%);
+            color: white;
+            padding: 12px 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo i {
+            margin-right: 8px;
+            font-size: 28px;
+        }
+
+        /* 搜索框 */
+        .search-bar {
+            display: flex;
+            flex: 0 1 400px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 20px 0 0 20px;
+            font-size: 14px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 0 20px 20px 0;
+            cursor: pointer;
+            color: #00a1d6;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: white;
+        }
+
+        /* 上传按钮 */
+        .upload-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .upload-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .upload-btn i {
+            margin-right: 6px;
+        }
+
+        /* 上传模态框 */
+        .upload-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            margin: 50px auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-header h3 {
+            color: #333;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+
+        .modal-header h3 i {
+            margin-right: 8px;
+            color: #00a1d6;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        /* 文件拖放区域 */
+        .file-drop-zone {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 20px 24px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-drop-zone:hover {
+            border-color: #00a1d6;
+            background: #f8fdff;
+        }
+
+        .file-drop-zone.dragover {
+            border-color: #00a1d6;
+            background: #f0f9ff;
+        }
+
+        .file-drop-zone i {
+            font-size: 48px;
+            color: #00a1d6;
+            margin-bottom: 12px;
+        }
+
+        .file-drop-zone p {
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        .file-info {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+        }
+
+        #fileName {
+            font-weight: bold;
+            color: #333;
+            display: block;
+        }
+
+        #fileSize {
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* 表单样式 */
+        .upload-form {
+            padding: 0 24px 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group label i {
+            margin-right: 6px;
+            color: #00a1d6;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00a1d6;
+            box-shadow: 0 0 0 2px rgba(0, 161, 214, 0.1);
+        }
+
+        /* 表单操作按钮 */
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .cancel-btn, .submit-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .cancel-btn {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+
+        .cancel-btn:hover {
+            background: #e9ecef;
+        }
+
+        .submit-btn {
+            background: #00a1d6;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #0084ff;
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .submit-btn i {
+            margin-right: 6px;
+        }
+
+        /* 主体内容区 */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px;
+            min-height: calc(100vh - 120px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 空状态样式 */
+        .empty-state {
+            text-align: center;
+            color: #999;
+            font-size: 16px;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* 视频网格 */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            width: 100%;
+        }
+
+        .video-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .video-thumbnail {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 比例 */
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .thumbnail-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .video-card:hover .play-overlay {
+            opacity: 1;
+        }
+
+        .play-overlay i {
+            color: white;
+            font-size: 20px;
+            margin-left: 4px;
+        }
+
+        .video-info {
+            padding: 16px;
+        }
+
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-meta {
+            display: flex;
+            align-items: center;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .upload-time {
+            color: #999;
+        }
+
+        /* 排序选项 */
+        .sort-options {
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        #sortSelect {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-cloud-moon"></i>
+                <span>玉兔云</span>
+            </div>
+            
+            <div class="search-bar">
+                <input type="text" placeholder="搜索视频..." id="searchInput">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+
+            <div class="upload-section">
+                <button class="upload-btn" id="uploadBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>上传视频</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 上传模态框 -->
+    <div class="upload-modal" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cloud-upload-alt"></i> 上传视频</h3>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <form id="uploadForm" class="upload-form">
+                <!-- 文件选择区域 -->
+                <div class="file-drop-zone" id="fileDropZone">
+                    <i class="fas fa-video"></i>
+                    <p>点击选择视频文件或拖拽到此处</p>
+                    <input type="file" id="videoFile" accept="video/*" hidden>
+                    <div class="file-info" id="fileInfo" style="display: none;">
+                        <span id="fileName"></span>
+                        <span id="fileSize"></span>
+                    </div>
+                </div>
+                
+                <!-- 标题输入 -->
+                <div class="form-group">
+                    <label for="videoTitle"><i class="fas fa-heading"></i> 视频标题</label>
+                    <input type="text" id="videoTitle" placeholder="请输入视频标题..." required>
+                </div>
+
+                <!-- 上传按钮 -->
+                <div class="form-actions">
+                    <button type="button" id="cancelUpload" class="cancel-btn">取消</button>
+                    <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                        <i class="fas fa-upload"></i> 开始上传
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 主体内容区 -->
+    <main class="main-container">
+        <div class="empty-state">
+            无视频
+        </div>
+    </main>
+
+    <script>
+        // DOM 元素
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadModal = document.getElementById('uploadModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelUpload = document.getElementById('cancelUpload');
+        const uploadForm = document.getElementById('uploadForm');
+        const videoFileInput = document.getElementById('videoFile');
+        const fileDropZone = document.getElementById('fileDropZone');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const videoTitleInput = document.getElementById('videoTitle');
+        const submitBtn = document.getElementById('submitBtn');
+        const mainContainer = document.querySelector('.main-container');
+
+        // 打开上传模态框
+        uploadBtn.addEventListener('click', () => {
+            uploadModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        });
+
+        // 关闭上传模态框
+        function closeUploadModal() {
+            uploadModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            resetForm();
+        }
+
+        closeModal.addEventListener('click', closeUploadModal);
+        cancelUpload.addEventListener('click', closeUploadModal);
+
+        // 点击模态框外部关闭
+        uploadModal.addEventListener('click', (e) => {
+            if (e.target === uploadModal) {
+                closeUploadModal();
+            }
+        });
+
+        // 文件选择处理
+        fileDropZone.addEventListener('click', () => {
+            videoFileInput.click();
+        });
+
+        // 拖放功能
+        fileDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.add('dragover');
+        });
+
+        fileDropZone.addEventListener('dragleave', () => {
+            fileDropZone.classList.remove('dragover');
+        });
+
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // 文件选择变化
+        videoFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // 处理文件选择
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('video/')) {
+                alert('请选择视频文件！');
+                return;
+            }
+
+            // 显示文件信息
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            
+            // 启用提交按钮
+            submitBtn.disabled = false;
+            
+            // 自动填充标题（去除扩展名）
+            const title = file.name.replace(/\.[^/.]+$/, "");
+            videoTitleInput.value = title;
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 重置表单
+        function resetForm() {
+            uploadForm.reset();
+            fileInfo.style.display = 'none';
+            submitBtn.disabled = true;
+        }
+
+        // 表单提交
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const file = videoFileInput.files[0];
+            const title = videoTitleInput.value.trim();
+            
+            if (!file || !title) {
+                alert('请选择视频文件并填写标题！');
+                return;
+            }
+
+            // 模拟上传成功
+            alert('视频上传成功！');
+            closeUploadModal();
+            
+            // 上传成功后创建视频网格
+            createVideoGrid();
+            
+            // 这里后面会连接真实的后端上传
+            console.log('准备上传:', {
+                file: file.name,
+                title: title,
+                size: file.size
+            });
+        });
+
+        // 创建视频网格（模拟）
+        function createVideoGrid() {
+            // 移除空状态
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
+            // 创建视频网格容器
+            const videoGrid = document.createElement('div');
+            videoGrid.className = 'video-grid';
+            videoGrid.id = 'videoGrid';
+            
+            // 创建排序选项
+            const sortOptions = document.createElement('div');
+            sortOptions.className = 'sort-options';
+            sortOptions.id = 'sortOptions';
+            sortOptions.style.display = 'block';
+            sortOptions.innerHTML = `
+                <select id="sortSelect">
+                    <option value="time">最新上传</option>
+                    <option value="name">按标题排序</option>
+                </select>
+            `;
+            
+            // 创建示例视频卡片
+            const videoCard = document.createElement('div');
+            videoCard.className = 'video-card';
+            videoCard.innerHTML = `
+                <div class="video-thumbnail">
+                    <div class="play-overlay">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
+                <div class="video-info">
+                    <h3 class="video-title">${videoTitleInput.value}</h3>
+                    <div class="video-meta">
+                        <span class="upload-time">刚刚</span>
+                    </div>
+                </div>
+            `;
+            
+            // 组装页面
+            mainContainer.innerHTML = '';
+            mainContainer.appendChild(sortOptions);
+            videoGrid.appendChild(videoCard);
+            mainContainer.appendChild(videoGrid);
+        }
+    </script>
+</body>
+</html>.
