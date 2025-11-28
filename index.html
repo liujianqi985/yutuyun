@@ -725,6 +725,371 @@
     </div>
 
     <script>
+        // ==================== 高级防御系统 ====================
+class DefenseSystem {
+    constructor() {
+        this.attackLog = [];
+        this.blockedIPs = new Set();
+        this.honeypots = new Set();
+        this.loadBlockedIPs();
+        this.initHoneypots();
+        this.createHoneypotTraps();
+    }
+
+    // 攻击检测和日志记录
+    detectAttack(request) {
+        const attackInfo = {
+            ip: this.getClientIP(),
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString(),
+            url: window.location.href,
+            type: 'unknown',
+            severity: 'low'
+        };
+
+        // 检测SQL注入
+        if (this.detectSQLInjection(request)) {
+            attackInfo.type = 'SQL Injection';
+            attackInfo.severity = 'high';
+        }
+
+        // 检测XSS
+        if (this.detectXSS(request)) {
+            attackInfo.type = 'XSS';
+            attackInfo.severity = 'high';
+        }
+
+        // 检测扫描器
+        if (this.detectScanner()) {
+            attackInfo.type = 'Scanner';
+            attackInfo.severity = 'medium';
+        }
+
+        if (attackInfo.type !== 'unknown') {
+            this.logAttack(attackInfo);
+            this.autoBlockIP(attackInfo);
+            return true;
+        }
+
+        return false;
+    }
+
+    // SQL注入检测
+    detectSQLInjection(input) {
+        const sqlPatterns = [
+            /union\s+select/i,
+            /drop\s+table/i,
+            /insert\s+into/i,
+            /select\s+\*\s+from/i,
+            /or\s+1=1/i,
+            /exec(\s|\+)+(s|x)p\w+/i
+        ];
+
+        const inputStr = JSON.stringify(input).toLowerCase();
+        return sqlPatterns.some(pattern => pattern.test(inputStr));
+    }
+
+    // XSS检测
+    detectXSS(input) {
+        const xssPatterns = [
+            /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+            /javascript:/gi,
+            /on\w+\s*=/gi,
+            /<iframe/gi,
+            /<img/gi
+        ];
+
+        const inputStr = JSON.stringify(input);
+        return xssPatterns.some(pattern => pattern.test(inputStr));
+    }
+
+    // 扫描器检测
+    detectScanner() {
+        const scannerSignatures = [
+            'sqlmap', 'nikto', 'burpsuite', 'nmap', 
+            'metasploit', 'wpscan', 'acunetix'
+        ];
+
+        const ua = navigator.userAgent.toLowerCase();
+        return scannerSignatures.some(sig => ua.includes(sig.toLowerCase()));
+    }
+
+    // 自动IP封禁
+    autoBlockIP(attackInfo) {
+        if (attackInfo.severity === 'high') {
+            this.blockedIPs.add(attackInfo.ip);
+            localStorage.setItem('blocked_ips', JSON.stringify([...this.blockedIPs]));
+            console.log(`🚫 自动封禁IP: ${attackInfo.ip} - 攻击类型: ${attackInfo.type}`);
+        }
+    }
+
+    // 蜜罐陷阱系统
+    createHoneypotTraps() {
+        // 虚假管理员登录
+        this.createFakeAdminLogin();
+        // 虚假API端点
+        this.createFakeAPIEndpoints();
+        // 虚假配置文件
+        this.createFakeConfigFiles();
+    }
+
+    createFakeAdminLogin() {
+        const fakeLogin = document.createElement('div');
+        fakeLogin.style.cssText = 'display: none;';
+        fakeLogin.innerHTML = `
+            <form id="fake-admin-login" onsubmit="defenseSystem.handleFakeLogin(event)">
+                <input type="text" name="username" value="admin">
+                <input type="password" name="password" value="123456">
+            </form>
+        `;
+        document.body.appendChild(fakeLogin);
+    }
+
+    handleFakeLogin(event) {
+        event.preventDefault();
+        this.logAttack({
+            ip: this.getClientIP(),
+            type: 'Honeypot Admin Login',
+            severity: 'high',
+            details: '触发虚假管理员登录'
+        });
+        return false;
+    }
+
+    createFakeAPIEndpoints() {
+        // 监控对常见漏洞端点的访问
+        const fakeEndpoints = ['/api/admin', '/wp-admin', '/config.json', '/.env'];
+        fakeEndpoints.forEach(endpoint => {
+            if (window.location.pathname.includes(endpoint)) {
+                this.logAttack({
+                    ip: this.getClientIP(),
+                    type: 'Suspicious Endpoint Access',
+                    severity: 'medium',
+                    details: `访问可疑端点: ${endpoint}`
+                });
+            }
+        });
+    }
+
+    createFakeConfigFiles() {
+        // 这里可以添加虚假配置文件的逻辑
+    }
+
+    // 攻击日志记录
+    logAttack(attackInfo) {
+        this.attackLog.push(attackInfo);
+        const existingLogs = JSON.parse(localStorage.getItem('attack_logs') || '[]');
+        existingLogs.push(attackInfo);
+        localStorage.setItem('attack_logs', JSON.stringify(existingLogs));
+        this.showAttackAlert(attackInfo);
+    }
+
+    showAttackAlert(attackInfo) {
+        const alertDiv = document.createElement('div');
+        alertDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff4757;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: 300px;
+        `;
+        
+        alertDiv.innerHTML = `
+            <strong>🚨 攻击检测!</strong><br>
+            类型: ${attackInfo.type}<br>
+            时间: ${new Date(attackInfo.timestamp).toLocaleTimeString()}
+        `;
+
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
+
+    loadBlockedIPs() {
+        try {
+            const saved = localStorage.getItem('blocked_ips');
+            if (saved) this.blockedIPs = new Set(JSON.parse(saved));
+        } catch (e) {
+            console.error('加载封禁IP列表失败:', e);
+        }
+    }
+
+    initHoneypots() {
+        setTimeout(() => this.createHoneypotFields(), 1000);
+    }
+
+    createHoneypotFields() {
+        const honeypot = document.createElement('div');
+        honeypot.style.cssText = 'opacity: 0; position: absolute; left: -9999px;';
+        honeypot.innerHTML = `
+            <input type="text" name="username" id="honeypot-username" tabindex="-1">
+            <input type="password" name="password" id="honeypot-password" tabindex="-1">
+        `;
+        document.body.appendChild(honeypot);
+    }
+
+    getClientIP() {
+        return 'user_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    getAttackStats() {
+        const logs = JSON.parse(localStorage.getItem('attack_logs') || '[]');
+        const stats = {
+            total: logs.length,
+            byType: {},
+            bySeverity: {},
+            recent: logs.slice(-10)
+        };
+
+        logs.forEach(log => {
+            stats.byType[log.type] = (stats.byType[log.type] || 0) + 1;
+            stats.bySeverity[log.severity] = (stats.bySeverity[log.severity] || 0) + 1;
+        });
+
+        return stats;
+    }
+}
+
+// 初始化防御系统
+const defenseSystem = new DefenseSystem();
+
+// 防御监控面板
+function createDefensePanel() {
+    const panel = document.createElement('div');
+    panel.id = 'defense-panel';
+    panel.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #2d3436;
+        color: white;
+        padding: 15px;
+        border-radius: 10px;
+        z-index: 9999;
+        font-size: 12px;
+        max-width: 300px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        display: none;
+    `;
+
+    panel.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong>🛡️ 防御监控</strong>
+            <button onclick="document.getElementById('defense-panel').style.display='none'" 
+                    style="background: none; border: none; color: white; cursor: pointer;">✕</button>
+        </div>
+        <div id="defense-stats">
+            <div>总攻击次数: <span id="attack-count">0</span></div>
+            <div>封禁IP数: <span id="blocked-count">0</span></div>
+            <div>实时状态: <span id="defense-status">🟢 正常</span></div>
+        </div>
+        <button onclick="showAttackDetails()" 
+                style="margin-top: 10px; padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">
+            查看攻击详情
+        </button>
+    `;
+
+    document.body.appendChild(panel);
+    return panel;
+}
+
+function updateDefensePanel() {
+    const stats = defenseSystem.getAttackStats();
+    const panel = document.getElementById('defense-panel');
+    
+    if (panel) {
+        document.getElementById('attack-count').textContent = stats.total;
+        document.getElementById('blocked-count').textContent = defenseSystem.blockedIPs.size;
+        
+        if (stats.total > 0) {
+            document.getElementById('defense-status').innerHTML = '🟡 受攻击';
+            panel.style.display = 'block';
+        }
+    }
+}
+
+function showAttackDetails() {
+    const stats = defenseSystem.getAttackStats();
+    alert(`攻击详情:\n总攻击次数: ${stats.total}\n攻击类型分布: ${JSON.stringify(stats.byType, null, 2)}`);
+}
+
+// 秘密管理员入口
+function createAdminEntry() {
+    let keySequence = '';
+    document.addEventListener('keydown', (e) => {
+        keySequence += e.key;
+        if (keySequence.length > 10) keySequence = keySequence.slice(-10);
+        
+        if (keySequence.includes('yutuyunadmin')) {
+            showDefenseDashboard();
+            keySequence = '';
+        }
+    });
+}
+
+function showDefenseDashboard() {
+    const stats = defenseSystem.getAttackStats();
+    
+    const dashboard = document.createElement('div');
+    dashboard.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 90%;
+        max-height: 80%;
+        overflow: auto;
+    `;
+
+    dashboard.innerHTML = `
+        <h2>🛡️ 玉兔云防御仪表板</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0;">
+            <div style="background: #f1f2f6; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 24px; color: #e74c3c;">${stats.total}</div>
+                <div>总攻击次数</div>
+            </div>
+            <div style="background: #f1f2f6; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 24px; color: #e67e22;">${defenseSystem.blockedIPs.size}</div>
+                <div>封禁IP数</div>
+            </div>
+            <div style="background: #f1f2f6; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 24px; color: #27ae60;">${stats.bySeverity.high || 0}</div>
+                <div>高危攻击</div>
+            </div>
+        </div>
+        <button onclick="this.parentElement.remove()" 
+                style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            关闭
+        </button>
+    `;
+
+    document.body.appendChild(dashboard);
+}
+
+// 初始化防御界面
+document.addEventListener('DOMContentLoaded', function() {
+    createDefensePanel();
+    createAdminEntry();
+    setInterval(updateDefensePanel, 30000);
+});
+
+// 在所有用户输入处添加攻击检测
+function secureInput(input) {
+    if (defenseSystem.detectAttack({input: input})) {
+        return false;
+    }
+    return true;
+}
+       
         // ==================== 配置信息 ====================
         const R2_CONFIG = {
             accessKeyId: 'f594e10953f9ec122d430f064a19b5b4',
