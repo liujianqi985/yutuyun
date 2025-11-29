@@ -1340,8 +1340,8 @@ async function uploadToR2(file, objectKey) {
     formData.append('objectKey', objectKey);
 
     try {
-        // 🔧 替换成你的 Worker 网址（创建Worker后更新这个）
-        const workerUrl = 'https://yutuyun-api.liuhaohao13920078681.workers.dev/upload';
+        //
+        const workerUrl = 'https://adc.liuhaohao13920078681.workers.dev/;
         
         const response = await fetch(workerUrl, {
             method: 'POST',
