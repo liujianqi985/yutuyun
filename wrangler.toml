@@ -1,7 +1,0 @@
-name = "adc"
-compatibility_date = "2025-11-29"
-main = "worker.js"
-
-[[r2_buckets]]
-binding = "MY_BUCKET"
-bucket_name = "adc"
