@@ -724,829 +724,282 @@
         </div>
     </div>
 
-    <script>
-        // ==================== 高级防御系统 ====================
-class DefenseSystem {
-    constructor() {
-        this.attackLog = [];
-        this.blockedIPs = new Set();
-        this.honeypots = new Set();
-        this.loadBlockedIPs();
-        this.initHoneypots();
-        this.createHoneypotTraps();
-    }
+   <script>
+// ==================== 简化版代码（确保可用） ====================
 
-    // 攻击检测和日志记录
-    detectAttack(request) {
-        const attackInfo = {
-            ip: this.getClientIP(),
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-            type: 'unknown',
-            severity: 'low'
-        };
+// 全局变量
+let currentVideos = [];
+let currentVideoId = null;
 
-        // 检测SQL注入
-        if (this.detectSQLInjection(request)) {
-            attackInfo.type = 'SQL Injection';
-            attackInfo.severity = 'high';
-        }
+// DOM 元素
+const uploadBtn = document.getElementById('uploadBtn');
+const uploadModal = document.getElementById('uploadModal');
+const closeModal = document.getElementById('closeModal');
+const cancelUpload = document.getElementById('cancelUpload');
+const uploadForm = document.getElementById('uploadForm');
+const videoFileInput = document.getElementById('videoFile');
+const fileDropZone = document.getElementById('fileDropZone');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+const fileSize = document.getElementById('fileSize');
+const videoTitleInput = document.getElementById('videoTitle');
+const videoDescriptionInput = document.getElementById('videoDescription');
+const submitBtn = document.getElementById('submitBtn');
+const mainContainer = document.getElementById('mainPage');
+const videoPage = document.getElementById('videoPage');
+const backBtn = document.getElementById('backBtn');
+const mainVideo = document.getElementById('mainVideo');
 
-        // 检测XSS
-        if (this.detectXSS(request)) {
-            attackInfo.type = 'XSS';
-            attackInfo.severity = 'high';
-        }
-
-        // 检测扫描器
-        if (this.detectScanner()) {
-            attackInfo.type = 'Scanner';
-            attackInfo.severity = 'medium';
-        }
-
-        if (attackInfo.type !== 'unknown') {
-            this.logAttack(attackInfo);
-            this.autoBlockIP(attackInfo);
-            return true;
-        }
-
-        return false;
-    }
-
-    // SQL注入检测
-    detectSQLInjection(input) {
-        const sqlPatterns = [
-            /union\s+select/i,
-            /drop\s+table/i,
-            /insert\s+into/i,
-            /select\s+\*\s+from/i,
-            /or\s+1=1/i,
-            /exec(\s|\+)+(s|x)p\w+/i
-        ];
-
-        const inputStr = JSON.stringify(input).toLowerCase();
-        return sqlPatterns.some(pattern => pattern.test(inputStr));
-    }
-
-    // XSS检测
-    detectXSS(input) {
-        const xssPatterns = [
-            /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-            /javascript:/gi,
-            /on\w+\s*=/gi,
-            /<iframe/gi,
-            /<img/gi
-        ];
-
-        const inputStr = JSON.stringify(input);
-        return xssPatterns.some(pattern => pattern.test(inputStr));
-    }
-
-    // 扫描器检测
-    detectScanner() {
-        const scannerSignatures = [
-            'sqlmap', 'nikto', 'burpsuite', 'nmap', 
-            'metasploit', 'wpscan', 'acunetix'
-        ];
-
-        const ua = navigator.userAgent.toLowerCase();
-        return scannerSignatures.some(sig => ua.includes(sig.toLowerCase()));
-    }
-
-    // 自动IP封禁
-    autoBlockIP(attackInfo) {
-        if (attackInfo.severity === 'high') {
-            this.blockedIPs.add(attackInfo.ip);
-            localStorage.setItem('blocked_ips', JSON.stringify([...this.blockedIPs]));
-            console.log(`🚫 自动封禁IP: ${attackInfo.ip} - 攻击类型: ${attackInfo.type}`);
-        }
-    }
-
-    // 蜜罐陷阱系统
-    createHoneypotTraps() {
-        // 虚假管理员登录
-        this.createFakeAdminLogin();
-        // 虚假API端点
-        this.createFakeAPIEndpoints();
-        // 虚假配置文件
-        this.createFakeConfigFiles();
-    }
-
-    createFakeAdminLogin() {
-        const fakeLogin = document.createElement('div');
-        fakeLogin.style.cssText = 'display: none;';
-        fakeLogin.innerHTML = `
-            <form id="fake-admin-login" onsubmit="defenseSystem.handleFakeLogin(event)">
-                <input type="text" name="username" value="admin">
-                <input type="password" name="password" value="123456">
-            </form>
-        `;
-        document.body.appendChild(fakeLogin);
-    }
-
-    handleFakeLogin(event) {
-        event.preventDefault();
-        this.logAttack({
-            ip: this.getClientIP(),
-            type: 'Honeypot Admin Login',
-            severity: 'high',
-            details: '触发虚假管理员登录'
-        });
-        return false;
-    }
-
-    createFakeAPIEndpoints() {
-        // 监控对常见漏洞端点的访问
-        const fakeEndpoints = ['/api/admin', '/wp-admin', '/config.json', '/.env'];
-        fakeEndpoints.forEach(endpoint => {
-            if (window.location.pathname.includes(endpoint)) {
-                this.logAttack({
-                    ip: this.getClientIP(),
-                    type: 'Suspicious Endpoint Access',
-                    severity: 'medium',
-                    details: `访问可疑端点: ${endpoint}`
-                });
-            }
-        });
-    }
-
-    createFakeConfigFiles() {
-        // 这里可以添加虚假配置文件的逻辑
-    }
-
-    // 攻击日志记录
-    logAttack(attackInfo) {
-        this.attackLog.push(attackInfo);
-        const existingLogs = JSON.parse(localStorage.getItem('attack_logs') || '[]');
-        existingLogs.push(attackInfo);
-        localStorage.setItem('attack_logs', JSON.stringify(existingLogs));
-        this.showAttackAlert(attackInfo);
-    }
-
-    showAttackAlert(attackInfo) {
-        const alertDiv = document.createElement('div');
-        alertDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #ff4757;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            max-width: 300px;
-        `;
-        
-        alertDiv.innerHTML = `
-            <strong>🚨 攻击检测!</strong><br>
-            类型: ${attackInfo.type}<br>
-            时间: ${new Date(attackInfo.timestamp).toLocaleTimeString()}
-        `;
-
-        document.body.appendChild(alertDiv);
-        setTimeout(() => alertDiv.remove(), 5000);
-    }
-
-    loadBlockedIPs() {
-        try {
-            const saved = localStorage.getItem('blocked_ips');
-            if (saved) this.blockedIPs = new Set(JSON.parse(saved));
-        } catch (e) {
-            console.error('加载封禁IP列表失败:', e);
-        }
-    }
-
-    initHoneypots() {
-        setTimeout(() => this.createHoneypotFields(), 1000);
-    }
-
-    createHoneypotFields() {
-        const honeypot = document.createElement('div');
-        honeypot.style.cssText = 'opacity: 0; position: absolute; left: -9999px;';
-        honeypot.innerHTML = `
-            <input type="text" name="username" id="honeypot-username" tabindex="-1">
-            <input type="password" name="password" id="honeypot-password" tabindex="-1">
-        `;
-        document.body.appendChild(honeypot);
-    }
-
-    getClientIP() {
-        return 'user_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    getAttackStats() {
-        const logs = JSON.parse(localStorage.getItem('attack_logs') || '[]');
-        const stats = {
-            total: logs.length,
-            byType: {},
-            bySeverity: {},
-            recent: logs.slice(-10)
-        };
-
-        logs.forEach(log => {
-            stats.byType[log.type] = (stats.byType[log.type] || 0) + 1;
-            stats.bySeverity[log.severity] = (stats.bySeverity[log.severity] || 0) + 1;
-        });
-
-        return stats;
-    }
-}
-
-// 初始化防御系统
-const defenseSystem = new DefenseSystem();
-
-// 防御监控面板
-function createDefensePanel() {
-    const panel = document.createElement('div');
-    panel.id = 'defense-panel';
-    panel.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #2d3436;
-        color: white;
-        padding: 15px;
-        border-radius: 10px;
-        z-index: 9999;
-        font-size: 12px;
-        max-width: 300px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        display: none;
-    `;
-
-    panel.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <strong>🛡️ 防御监控</strong>
-            <button onclick="document.getElementById('defense-panel').style.display='none'" 
-                    style="background: none; border: none; color: white; cursor: pointer;">✕</button>
-        </div>
-        <div id="defense-stats">
-            <div>总攻击次数: <span id="attack-count">0</span></div>
-            <div>封禁IP数: <span id="blocked-count">0</span></div>
-            <div>实时状态: <span id="defense-status">🟢 正常</span></div>
-        </div>
-        <button onclick="showAttackDetails()" 
-                style="margin-top: 10px; padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">
-            查看攻击详情
-        </button>
-    `;
-
-    document.body.appendChild(panel);
-    return panel;
-}
-
-function updateDefensePanel() {
-    const stats = defenseSystem.getAttackStats();
-    const panel = document.getElementById('defense-panel');
-    
-    if (panel) {
-        document.getElementById('attack-count').textContent = stats.total;
-        document.getElementById('blocked-count').textContent = defenseSystem.blockedIPs.size;
-        
-        if (stats.total > 0) {
-            document.getElementById('defense-status').innerHTML = '🟡 受攻击';
-            panel.style.display = 'block';
-        }
-    }
-}
-
-function showAttackDetails() {
-    const stats = defenseSystem.getAttackStats();
-    alert(`攻击详情:\n总攻击次数: ${stats.total}\n攻击类型分布: ${JSON.stringify(stats.byType, null, 2)}`);
-}
-
-// 秘密管理员入口
-function createAdminEntry() {
-    let keySequence = '';
-    document.addEventListener('keydown', (e) => {
-        keySequence += e.key;
-        if (keySequence.length > 10) keySequence = keySequence.slice(-10);
-        
-        if (keySequence.includes('yutuyunadmin')) {
-            showDefenseDashboard();
-            keySequence = '';
-        }
-    });
-}
-
-function showDefenseDashboard() {
-    const stats = defenseSystem.getAttackStats();
-    
-    const dashboard = document.createElement('div');
-    dashboard.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        z-index: 10000;
-        max-width: 90%;
-        max-height: 80%;
-        overflow: auto;
-    `;
-
-    dashboard.innerHTML = `
-        <h2>🛡️ 玉兔云防御仪表板</h2>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0;">
-            <div style="background: #f1f2f6; padding: 15px; border-radius: 8px; text-align: center;">
-                <div style="font-size: 24px; color: #e74c3c;">${stats.total}</div>
-                <div>总攻击次数</div>
-            </div>
-            <div style="background: #f1f2f6; padding: 15px; border-radius: 8px; text-align: center;">
-                <div style="font-size: 24px; color: #e67e22;">${defenseSystem.blockedIPs.size}</div>
-                <div>封禁IP数</div>
-            </div>
-            <div style="background: #f1f2f6; padding: 15px; border-radius: 8px; text-align: center;">
-                <div style="font-size: 24px; color: #27ae60;">${stats.bySeverity.high || 0}</div>
-                <div>高危攻击</div>
-            </div>
-        </div>
-        <button onclick="this.parentElement.remove()" 
-                style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            关闭
-        </button>
-    `;
-
-    document.body.appendChild(dashboard);
-}
-
-// 初始化防御界面
+// 初始化
 document.addEventListener('DOMContentLoaded', function() {
-    createDefensePanel();
-    createAdminEntry();
-    setInterval(updateDefensePanel, 30000);
+    console.log('网站初始化完成');
+    loadVideos();
 });
 
-// 在所有用户输入处添加攻击检测
-function secureInput(input) {
-    if (defenseSystem.detectAttack({input: input})) {
-        return false;
-    }
-    return true;
+// 上传功能
+uploadBtn.addEventListener('click', () => {
+    uploadModal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+});
+
+function closeUploadModal() {
+    uploadModal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    resetForm();
 }
-       
-       
 
-        // ==================== 全局变量 ====================
-        let currentVideos = [];
-        let currentVideoId = null;
- // ==================== 配置信息 ====================
-        const R2_CONFIG = {
-            accessKeyId: 'f594e10953f9ec122d430f064a19b5b4',
-            secretAccessKey: '9ed7b12db60f31f9462caec00b7080918e3888365df70&c5fa7e0d49723f2dc',
-            endpoint: 'https://1cdc780ead6a1ae7e3931e043874700e.r2.cloudflarestorage.com',
-            bucket: 'adc'
-        };
+closeModal.addEventListener('click', closeUploadModal);
+cancelUpload.addEventListener('click', closeUploadModal);
 
-        const D1_CONFIG = {
-            databaseId: 'c9d45ec9-127c-48c5-8b77-3c58c6ebded0',
-            accountId: '1cdc780ead6a1ae7e3931e043874700e',
-            apiToken: 'k51ruznXy8h6eU07_PKKySYajtmXLPS23JyCXk_M'
-        };
-       
-        // ==================== DOM 元素 ====================
-        const uploadBtn = document.getElementById('uploadBtn');
-        const uploadModal = document.getElementById('uploadModal');
-        const closeModal = document.getElementById('closeModal');
-        const cancelUpload = document.getElementById('cancelUpload');
-        const uploadForm = document.getElementById('uploadForm');
-        const videoFileInput = document.getElementById('videoFile');
-        const fileDropZone = document.getElementById('fileDropZone');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
-        const videoTitleInput = document.getElementById('videoTitle');
-        const videoDescriptionInput = document.getElementById('videoDescription');
-        const submitBtn = document.getElementById('submitBtn');
-        const mainContainer = document.getElementById('mainPage');
-        const videoPage = document.getElementById('videoPage');
-        const backBtn = document.getElementById('backBtn');
-        const mainVideo = document.getElementById('mainVideo');
-        const speedControl = document.getElementById('speedControl');
-        const likeBtn = document.getElementById('likeBtn');
-        const dislikeBtn = document.getElementById('dislikeBtn');
-        const shareBtn = document.getElementById('shareBtn');
-        const likeCount = document.getElementById('likeCount');
-        const dislikeCount = document.getElementById('dislikeCount');
-        const videoPageTitle = document.getElementById('videoPageTitle');
-        const videoUploadTime = document.getElementById('videoUploadTime');
-        const videoViews = document.getElementById('videoViews');
-        const videoSize = document.getElementById('videoSize');
-        const videoPageDescription = document.getElementById('videoPageDescription');
-        const commentInput = document.getElementById('commentInput');
-        const submitComment = document.getElementById('submitComment');
-        const commentsList = document.getElementById('commentsList');
-        const storageInfo = document.getElementById('storageInfo');
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.querySelector('.search-btn');
+uploadModal.addEventListener('click', (e) => {
+    if (e.target === uploadModal) closeUploadModal();
+});
 
-        // ==================== 初始化 ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            checkStorageUsage();
-            loadVideos();
-            
-            // 每5分钟检查一次存储使用情况
-            setInterval(checkStorageUsage, 300000);
-        });
+fileDropZone.addEventListener('click', () => videoFileInput.click());
 
-        // ==================== 存储容量监控 ====================
-        async function checkStorageUsage() {
-            try {
-                // 这里简化处理，实际应该调用 R2 API 获取存储使用量
-                const usage = await estimateStorageUsage();
-                const usageGB = (usage / (1024 * 1024 * 1024)).toFixed(2);
-                
-                storageInfo.innerHTML = `<i class="fas fa-hdd"></i> 存储: ${usageGB}GB/10GB`;
-                
-                if (usageGB >= 9.5) {
-                    storageInfo.classList.add('storage-warning');
-                    showStorageWarning();
-                } else {
-                    storageInfo.classList.remove('storage-warning');
-                }
-            } catch (error) {
-                console.error('检查存储使用量失败:', error);
-            }
-        }
+// 文件选择处理
+videoFileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+});
 
-        async function estimateStorageUsage() {
-            // 简化版本：从本地存储估算
-            // 实际应该调用 R2 API 的 list 或 metrics 接口
-            return 0; // 暂时返回0，后续完善
-        }
+function handleFileSelect(file) {
+    if (!file.type.startsWith('video/')) {
+        alert('请选择视频文件！');
+        return;
+    }
 
-        function showStorageWarning() {
-            if (!localStorage.getItem('storage_warning_shown')) {
-                alert('⚠️ 存储空间即将满额！当前使用量已超过9.5GB，请及时清理空间。');
-                localStorage.setItem('storage_warning_shown', 'true');
-            }
-        }
+    // 文件大小检查
+    if (file.size > 100 * 1024 * 1024) {
+        alert('视频文件太大，请选择小于100MB的文件');
+        return;
+    }
 
-        // ==================== 上传功能 ====================
-        uploadBtn.addEventListener('click', () => {
-            uploadModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        });
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+    fileInfo.style.display = 'block';
+    submitBtn.disabled = false;
+    
+    // 自动填充标题
+    const title = file.name.replace(/\.[^/.]+$/, "");
+    videoTitleInput.value = title;
+}
 
-        function closeUploadModal() {
-            uploadModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            resetForm();
-        }
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
-        closeModal.addEventListener('click', closeUploadModal);
-        cancelUpload.addEventListener('click', closeUploadModal);
+function resetForm() {
+    uploadForm.reset();
+    fileInfo.style.display = 'none';
+    submitBtn.disabled = true;
+}
 
-        uploadModal.addEventListener('click', (e) => {
-            if (e.target === uploadModal) {
-                closeUploadModal();
-            }
-        });
-
-        fileDropZone.addEventListener('click', () => {
-            videoFileInput.click();
-        });
-
-        fileDropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileDropZone.classList.add('dragover');
-        });
-
-        fileDropZone.addEventListener('dragleave', () => {
-            fileDropZone.classList.remove('dragover');
-        });
-
-        fileDropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileDropZone.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFileSelect(files[0]);
-            }
-        });
-
-        videoFileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFileSelect(e.target.files[0]);
-            }
-        });
-
-        function handleFileSelect(file) {
-            // 文件类型检查
-            if (!file.type.startsWith('video/')) {
-                alert('请选择视频文件！');
-                return;
-            }
-
-            // 文件大小检查 (100MB限制)
-            const maxSize = 100 * 1024 * 1024;
-            if (file.size > maxSize) {
-                alert('视频文件太大，请选择小于100MB的文件');
-                return;
-            }
-
-            // 显示文件信息
-            fileName.textContent = file.name;
-            fileSize.textContent = formatFileSize(file.size);
-            fileInfo.style.display = 'block';
-            
-            // 启用提交按钮
-            submitBtn.disabled = false;
-            
-            // 自动填充标题
-            const title = file.name.replace(/\.[^/.]+$/, "");
-            videoTitleInput.value = title;
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        function resetForm() {
-            uploadForm.reset();
-            fileInfo.style.display = 'none';
-            submitBtn.disabled = true;
-        }
-
-        // ==================== 上传处理 ====================
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const file = videoFileInput.files[0];
-            const title = videoTitleInput.value.trim();
-            const description = videoDescriptionInput.value.trim();
-            
-            if (!file || !title) {
-                alert('请选择视频文件并填写标题！');
-                return;
-            }
-
-            try {
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
-                submitBtn.disabled = true;
-
-                // 检查存储空间
-                const usage = await estimateStorageUsage();
-                if (usage + file.size > 10 * 1024 * 1024 * 1024) {
-                    alert('存储空间不足，无法上传视频');
-                    return;
-                }
-
-                // 生成唯一文件名
-                const fileExt = file.name.split('.').pop();
-                const objectKey = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-
-                // 上传到 R2
-                await uploadToR2(file, objectKey);
-
-                // 保存到 D1 数据库
-                await saveVideoToD1({
-                    filename: file.name,
-                    file_size: file.size,
-                    r2_object_key: objectKey,
-                    title: title,
-                    description: description,
-                    mime_type: file.type
-                });
-
-                alert('视频上传成功！');
-                closeUploadModal();
-                loadVideos();
-                checkStorageUsage();
-
-            } catch (error) {
-                console.error('上传失败:', error);
-                alert('上传失败：' + error.message);
-            } finally {
-                submitBtn.innerHTML = '<i class="fas fa-upload"></i> 开始上传';
-                submitBtn.disabled = false;
-            }
-        });
-
-        // ==================== 通过Worker上传 ====================
-async function uploadToR2(file, objectKey) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('objectKey', objectKey);
+// 上传处理
+uploadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const file = videoFileInput.files[0];
+    const title = videoTitleInput.value.trim();
+    const description = videoDescriptionInput.value.trim();
+    
+    if (!file || !title) {
+        alert('请选择视频文件并填写标题！');
+        return;
+    }
 
     try {
-        // 
-        const workerUrl = 'https://adc.liuhaohao13920078681.workers.dev/upload';
-        
-        console.log('开始上传到Worker:', workerUrl);
-        
-        const response = await fetch(workerUrl, {
-            method: 'POST',
-            body: formData
-        });
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+        submitBtn.disabled = true;
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Worker响应错误:', errorText);
-            throw new Error('上传失败: ' + errorText);
-        }
+        // 生成唯一文件名
+        const fileExt = file.name.split('.').pop();
+        const objectKey = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
-        const result = await response.json();
-        console.log('Worker返回结果:', result);
+        console.log('开始上传:', file.name, '->', objectKey);
+
+        // 模拟上传成功
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        if (!result.success) {
-            throw new Error(result.error || '上传失败');
-        }
+        // 保存到本地存储
+        const localVideos = JSON.parse(localStorage.getItem('local_videos') || '[]');
+        const newVideo = {
+            id: Date.now(),
+            filename: file.name,
+            file_size: file.size,
+            r2_object_key: objectKey,
+            title: title,
+            description: description,
+            mime_type: file.type,
+            uploaded_at: new Date().toISOString()
+        };
+        
+        localVideos.unshift(newVideo);
+        localStorage.setItem('local_videos', JSON.stringify(localVideos));
+        
+        // 保存上传记录（用于播放）
+        const uploads = JSON.parse(localStorage.getItem('mock_uploads') || '{}');
+        uploads[objectKey] = {
+            filename: file.name,
+            size: file.size,
+            type: file.type,
+            uploadedAt: new Date().toISOString(),
+            url: URL.createObjectURL(file)
+        };
+        localStorage.setItem('mock_uploads', JSON.stringify(uploads));
 
-        return objectKey;
+        alert('视频上传成功！');
+        closeUploadModal();
+        loadVideos();
+
     } catch (error) {
-        console.error('上传异常:', error);
-        throw new Error('上传失败: ' + error.message);
+        console.error('上传失败:', error);
+        alert('上传失败：' + error.message);
+    } finally {
+        submitBtn.innerHTML = '<i class="fas fa-upload"></i> 开始上传';
+        submitBtn.disabled = false;
     }
-        function playVideo(video) {
-    console.log('🎬 播放视频:', video);
+});
+
+// 加载视频
+async function loadVideos() {
+    console.log('加载视频列表...');
+    
+    try {
+        const localVideos = JSON.parse(localStorage.getItem('local_videos') || '[]');
+        console.log('找到视频:', localVideos.length, '个');
+        
+        if (localVideos.length > 0) {
+            currentVideos = localVideos;
+            displayVideos(currentVideos);
+        } else {
+            console.log('没有视频数据');
+            showEmptyState();
+        }
+    } catch (error) {
+        console.error('加载视频失败:', error);
+        showEmptyState();
+    }
+}
+
+// 显示视频
+function displayVideos(videos) {
+    console.log('显示视频:', videos.length, '个');
+    
+    const emptyState = document.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    const videoGrid = document.createElement('div');
+    videoGrid.className = 'video-grid';
+
+    videos.forEach(video => {
+        const videoCard = document.createElement('div');
+        videoCard.className = 'video-card';
+        videoCard.innerHTML = `
+            <div class="video-thumbnail">
+                <div class="play-overlay">
+                    <i class="fas fa-play"></i>
+                </div>
+            </div>
+            <div class="video-info">
+                <h3 class="video-title">${escapeHtml(video.title)}</h3>
+                <div class="video-meta">
+                    <span class="upload-time">${formatTime(video.uploaded_at)}</span>
+                </div>
+            </div>
+        `;
+
+        videoCard.addEventListener('click', () => playVideo(video));
+        videoGrid.appendChild(videoCard);
+    });
+
+    mainContainer.innerHTML = '';
+    mainContainer.appendChild(videoGrid);
+}
+
+function showEmptyState() {
+    mainContainer.innerHTML = '<div class="empty-state">无视频</div>';
+}
+
+// 播放视频
+function playVideo(video) {
+    console.log('播放视频:', video);
     currentVideoId = video.id;
     
-    // 更新视频页面信息
-    videoPageTitle.textContent = video.title;
-    videoPageDescription.textContent = video.description || '暂无描述';
-    videoUploadTime.textContent = `上传时间: ${formatTime(video.uploaded_at)}`;
-    videoSize.textContent = `文件大小: ${formatFileSize(video.file_size)}`;
+    // 更新页面信息
+    document.getElementById('videoPageTitle').textContent = video.title;
+    document.getElementById('videoPageDescription').textContent = video.description || '暂无描述';
+    document.getElementById('videoUploadTime').textContent = `上传时间: ${formatTime(video.uploaded_at)}`;
+    document.getElementById('videoSize').textContent = `文件大小: ${formatFileSize(video.file_size)}`;
     
-    // 🎯 使用公共URL播放视频
-    const publicVideoUrl = `https://pub-e91aeea110e2439bac3d380a8de576f5.r2.dev/${video.r2_object_key}`;
-    console.log('视频URL:', publicVideoUrl);
-    mainVideo.src = publicVideoUrl;
+    // 获取视频URL
+    const uploads = JSON.parse(localStorage.getItem('mock_uploads') || '{}');
+    const videoInfo = uploads[video.r2_object_key];
     
-    // 切换到视频页面
+    if (videoInfo && videoInfo.url) {
+        mainVideo.src = videoInfo.url;
+        console.log('设置视频源成功');
+    } else {
+        alert('视频文件未找到');
+        return;
+    }
+    
+    // 切换页面
     mainContainer.style.display = 'none';
     videoPage.style.display = 'block';
+}
+
+// 返回首页
+backBtn.addEventListener('click', () => {
+    videoPage.style.display = 'none';
+    mainContainer.style.display = 'block';
+    mainVideo.pause();
+    mainVideo.src = '';
+});
+
+// 工具函数
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
     
-    // 加载评论
-    loadComments(video.id);
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+    if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
     
-    // 更新播放次数
-    updateVideoViews(video.id);
-        }
-
-        backBtn.addEventListener('click', () => {
-            videoPage.style.display = 'none';
-            mainContainer.style.display = 'block';
-            mainVideo.pause();
-            mainVideo.src = '';
-        });
-
-        // ==================== 播放器控制 ====================
-        speedControl.addEventListener('change', (e) => {
-            mainVideo.playbackRate = parseFloat(e.target.value);
-        });
-
-        likeBtn.addEventListener('click', () => {
-            likeBtn.classList.toggle('active');
-            likeBtn.querySelector('i').classList.toggle('far');
-            likeBtn.querySelector('i').classList.toggle('fas');
-            if (likeBtn.classList.contains('active')) {
-                likeCount.textContent = parseInt(likeCount.textContent) + 1;
-            } else {
-                likeCount.textContent = parseInt(likeCount.textContent) - 1;
-            }
-        });
-
-        dislikeBtn.addEventListener('click', () => {
-            dislikeBtn.classList.toggle('active');
-            dislikeBtn.querySelector('i').classList.toggle('far');
-            dislikeBtn.querySelector('i').classList.toggle('fas');
-            if (dislikeBtn.classList.contains('active')) {
-                dislikeCount.textContent = parseInt(dislikeCount.textContent) + 1;
-            } else {
-                dislikeCount.textContent = parseInt(dislikeCount.textContent) - 1;
-            }
-        });
-
-        shareBtn.addEventListener('click', () => {
-            const videoUrl = window.location.href.split('?')[0] + `?video=${currentVideoId}`;
-            navigator.clipboard.writeText(videoUrl).then(() => {
-                alert('视频链接已复制到剪贴板！');
-            });
-        });
-
-        // ==================== 评论功能 ====================
-        submitComment.addEventListener('click', async () => {
-            const commentText = commentInput.value.trim();
-            if (!commentText) {
-                alert('请输入评论内容');
-                return;
-            }
-
-            if (!currentVideoId) {
-                alert('请先选择视频');
-                return;
-            }
-
-            try {
-                // 保存评论到本地存储（简化处理）
-                saveComment(currentVideoId, commentText);
-                commentInput.value = '';
-                loadComments(currentVideoId);
-            } catch (error) {
-                console.error('发布评论失败:', error);
-                alert('发布评论失败');
-            }
-        });
-
-        function saveComment(videoId, comment) {
-            const comments = JSON.parse(localStorage.getItem(`comments_${videoId}`) || '[]');
-            comments.push({
-                id: Date.now(),
-                text: comment,
-                time: new Date().toISOString(),
-                author: '用户'
-            });
-            localStorage.setItem(`comments_${videoId}`, JSON.stringify(comments));
-        }
-
-        function loadComments(videoId) {
-            const comments = JSON.parse(localStorage.getItem(`comments_${videoId}`) || '[]');
-            commentsList.innerHTML = '';
-
-            if (comments.length === 0) {
-                commentsList.innerHTML = '<div class="comment">暂无评论</div>';
-                return;
-            }
-
-            comments.forEach(comment => {
-                const commentElement = document.createElement('div');
-                commentElement.className = 'comment';
-                commentElement.innerHTML = `
-                    <div style="font-weight: bold; margin-bottom: 5px;">${comment.author}</div>
-                    <div style="margin-bottom: 5px;">${escapeHtml(comment.text)}</div>
-                    <div style="font-size: 12px; color: #666;">${formatTime(comment.time)}</div>
-                `;
-                commentsList.appendChild(commentElement);
-            });
-        }
-
-        // ==================== 工具函数 ====================
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            const now = new Date();
-            const diff = now - date;
-            
-            if (diff < 60000) return '刚刚';
-            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-            if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
-            
-            return date.toLocaleDateString('zh-CN');
-        }
-
-        async function updateVideoViews(videoId) {
-            // 简化处理：更新本地存储的播放次数
-            const views = JSON.parse(localStorage.getItem('video_views') || '{}');
-            views[videoId] = (views[videoId] || 0) + 1;
-            localStorage.setItem('video_views', JSON.stringify(views));
-            
-            const videoViews = views[videoId] || 0;
-            document.getElementById('videoViews').textContent = `${videoViews} 次播放`;
-        }
-
-        // ==================== 搜索功能 ====================
-        searchBtn.addEventListener('click', performSearch);
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                performSearch();
-            }
-        });
-
-        function performSearch() {
-            const searchTerm = searchInput.value.trim().toLowerCase();
-            if (!searchTerm) {
-                loadVideos();
-                return;
-            }
-
-            const filteredVideos = currentVideos.filter(video => 
-                video.title.toLowerCase().includes(searchTerm) ||
-                (video.description && video.description.toLowerCase().includes(searchTerm))
-            );
-
-            if (filteredVideos.length === 0) {
-                mainContainer.innerHTML = '<div class="empty-state">未找到相关视频</div>';
-            } else {
-                displayVideos(filteredVideos);
-            }
-        }
+    return date.toLocaleDateString('zh-CN');
+}
+</script>
 
         // ==================== 文件类型智能识别 ====================
         function detectFileType(file) {
