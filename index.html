@@ -1333,15 +1333,17 @@ function secureInput(input) {
             }
         });
 
-        /// ==================== 通过Worker上传 ====================
+        // ==================== 通过Worker上传 ====================
 async function uploadToR2(file, objectKey) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('objectKey', objectKey);
 
     try {
-        //
-        const workerUrl = 'https://adc.liuhaohao13920078681.workers.dev/;
+        // 🔧 使用你已部署的 Worker 网址
+        const workerUrl = 'https://adc.liuhaohao13920078681.workers.dev/upload';
+        
+        console.log('开始上传到Worker:', workerUrl);
         
         const response = await fetch(workerUrl, {
             method: 'POST',
@@ -1349,34 +1351,24 @@ async function uploadToR2(file, objectKey) {
         });
 
         if (!response.ok) {
-            throw new Error('上传失败: ' + (await response.text()));
+            const errorText = await response.text();
+            console.error('Worker响应错误:', errorText);
+            throw new Error('上传失败: ' + errorText);
         }
 
         const result = await response.json();
+        console.log('Worker返回结果:', result);
+        
         if (!result.success) {
             throw new Error(result.error || '上传失败');
         }
 
         return objectKey;
     } catch (error) {
+        console.error('上传异常:', error);
         throw new Error('上传失败: ' + error.message);
     }
 }
-        // ==================== 保存视频信息 ====================
-async function saveVideoToD1(videoData) {
-    // 现在简化处理，先保存到本地存储
-    const localVideos = JSON.parse(localStorage.getItem('local_videos') || '[]');
-    localVideos.push({
-        id: Date.now(),
-        ...videoData,
-        uploaded_at: new Date().toISOString()
-    });
-    localStorage.setItem('local_videos', JSON.stringify(localVideos));
-    
-    return true;
-}
-        }
-
         // ==================== 视频播放功能 ====================
         function playVideo(video) {
             currentVideoId = video.id;
