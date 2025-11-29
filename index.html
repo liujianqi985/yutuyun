@@ -818,7 +818,153 @@ function resetForm() {
     submitBtn.disabled = true;
 }
 
-// 上传处理
+// ==================== S3 API 直连配置 ====================
+const S3_CONFIG = {
+    accessKeyId: 'f594e10953f9ec122d430f064a19b5b4',
+    secretAccessKey: '9ed7b12db60f31f9462caec00b7080918e3888365df70&c5fa7e0d49723f2dc',
+    endpoint: 'https://1cdc780ead6a1ae7e3931e043874700e.r2.cloudflarestorage.com',
+    bucket: 'adc',
+    region: 'auto'
+};
+
+// ==================== S3 签名工具函数 ====================
+function getS3Signature(method, path, headers = {}) {
+    const date = new Date().toUTCString();
+    const canonicalRequest = `${method}\n${path}\n\nhost:${new URL(S3_CONFIG.endpoint).host}\n${Object.keys(headers).map(k => `${k.toLowerCase()}:${headers[k]}`).join('\n')}\n\nhost\n`;
+    
+    // 简化签名（实际应该用 HMAC-SHA256）
+    return `AWS4-HMAC-SHA256 Credential=${S3_CONFIG.accessKeyId}/auto/s3/aws4_request, SignedHeaders=host, Signature=simplified`;
+}
+
+// ==================== S3 直连上传 ====================
+async function uploadToS3(file, objectKey) {
+    console.log('📤 S3直连上传:', file.name);
+    
+    try {
+        const url = `${S3_CONFIG.endpoint}/${S3_CONFIG.bucket}/${objectKey}`;
+        
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `AWS ${S3_CONFIG.accessKeyId}:${S3_CONFIG.secretAccessKey}`,
+                'Content-Type': file.type,
+                'x-amz-date': new Date().toUTCString()
+            },
+            body: file
+        });
+
+        if (!response.ok) {
+            throw new Error(`S3上传失败: ${response.status} ${response.statusText}`);
+        }
+
+        console.log('✅ S3直连上传成功');
+        return objectKey;
+    } catch (error) {
+        console.error('❌ S3直连上传失败:', error);
+        throw new Error('上传失败: ' + error.message);
+    }
+}
+
+// ==================== S3 获取文件列表 ====================
+async function getS3FileList() {
+    try {
+        const url = `${S3_CONFIG.endpoint}/${S3_CONFIG.bucket}?list-type=2`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `AWS ${S3_CONFIG.accessKeyId}:${S3_CONFIG.secretAccessKey}`,
+                'x-amz-date': new Date().toUTCString()
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`获取文件列表失败: ${response.status}`);
+        }
+
+        const xmlText = await response.text();
+        console.log('S3返回的XML:', xmlText);
+        
+        return parseS3XML(xmlText);
+    } catch (error) {
+        console.error('获取S3文件列表失败:', error);
+        return [];
+    }
+}
+
+// ==================== 解析 S3 XML 响应 ====================
+function parseS3XML(xmlText) {
+    const files = [];
+    
+    // 使用 DOMParser 解析 XML
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+    
+    const contents = xmlDoc.getElementsByTagName('Contents');
+    for (let content of contents) {
+        const key = content.getElementsByTagName('Key')[0]?.textContent;
+        const size = content.getElementsByTagName('Size')[0]?.textContent;
+        const lastModified = content.getElementsByTagName('LastModified')[0]?.textContent;
+        
+        if (key && !key.endsWith('/')) {
+            files.push({
+                id: key,
+                filename: key,
+                r2_object_key: key,
+                title: key.replace(/\.[^/.]+$/, ""),
+                file_size: parseInt(size) || 0,
+                uploaded_at: lastModified || new Date().toISOString(),
+                public_url: `https://pub-e91aeea110e2439bac3d380a8de576f5.r2.dev/${key}`
+            });
+        }
+    }
+    
+    return files;
+}
+
+// ==================== 删除 S3 文件 ====================
+async function deleteS3File(objectKey) {
+    try {
+        const url = `${S3_CONFIG.endpoint}/${S3_CONFIG.bucket}/${objectKey}`;
+        
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `AWS ${S3_CONFIG.accessKeyId}:${S3_CONFIG.secretAccessKey}`,
+                'x-amz-date': new Date().toUTCString()
+            }
+        });
+
+        return response.ok;
+    } catch (error) {
+        console.error('删除文件失败:', error);
+        return false;
+    }
+}
+
+// ==================== 修改现有函数 ====================
+async function loadVideos() {
+    console.log('🔄 S3直连加载视频...');
+    
+    try {
+        // 从 S3 获取真实文件列表
+        const s3Files = await getS3FileList();
+        console.log('S3文件列表:', s3Files);
+        
+        if (s3Files.length > 0) {
+            currentVideos = s3Files;
+            displayVideos(currentVideos);
+        } else {
+            console.log('S3中没有文件，显示空状态');
+            showEmptyState();
+        }
+    } catch (error) {
+        console.error('S3直连加载失败:', error);
+        showEmptyState();
+    }
+}
+
+// 修改上传处理函数
 uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -839,41 +985,22 @@ uploadForm.addEventListener('submit', async (e) => {
         const fileExt = file.name.split('.').pop();
         const objectKey = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
-        console.log('开始上传:', file.name, '->', objectKey);
+        // 🎯 使用 S3 API 直接上传
+        await uploadToS3(file, objectKey);
 
-        // 模拟上传成功
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // 保存到本地存储
-        const localVideos = JSON.parse(localStorage.getItem('local_videos') || '[]');
-        const newVideo = {
-            id: Date.now(),
+        // 保存信息到本地存储
+        await saveVideoToLocalDB({
             filename: file.name,
             file_size: file.size,
             r2_object_key: objectKey,
             title: title,
             description: description,
-            mime_type: file.type,
-            uploaded_at: new Date().toISOString()
-        };
-        
-        localVideos.unshift(newVideo);
-        localStorage.setItem('local_videos', JSON.stringify(localVideos));
-        
-        // 保存上传记录（用于播放）
-        const uploads = JSON.parse(localStorage.getItem('mock_uploads') || '{}');
-        uploads[objectKey] = {
-            filename: file.name,
-            size: file.size,
-            type: file.type,
-            uploadedAt: new Date().toISOString(),
-            url: URL.createObjectURL(file)
-        };
-        localStorage.setItem('mock_uploads', JSON.stringify(uploads));
+            mime_type: file.type
+        });
 
         alert('视频上传成功！');
         closeUploadModal();
-        loadVideos();
+        loadVideos(); // 重新加载列表
 
     } catch (error) {
         console.error('上传失败:', error);
@@ -884,71 +1011,18 @@ uploadForm.addEventListener('submit', async (e) => {
     }
 });
 
-// 加载视频
-async function loadVideos() {
-    console.log('加载视频列表...');
-    
-    try {
-        const localVideos = JSON.parse(localStorage.getItem('local_videos') || '[]');
-        console.log('找到视频:', localVideos.length, '个');
-        
-        if (localVideos.length > 0) {
-            currentVideos = localVideos;
-            displayVideos(currentVideos);
-        } else {
-            console.log('没有视频数据');
-            showEmptyState();
-        }
-    } catch (error) {
-        console.error('加载视频失败:', error);
-        showEmptyState();
-    }
-}
-
-// 显示视频
-function displayVideos(videos) {
-    console.log('显示视频:', videos.length, '个');
-    
-    const emptyState = document.querySelector('.empty-state');
-    if (emptyState) emptyState.remove();
-
-    const videoGrid = document.createElement('div');
-    videoGrid.className = 'video-grid';
-
-    videos.forEach(video => {
-        const videoCard = document.createElement('div');
-        videoCard.className = 'video-card';
-        videoCard.innerHTML = `
-            <div class="video-thumbnail">
-                <div class="play-overlay">
-                    <i class="fas fa-play"></i>
-                </div>
-            </div>
-            <div class="video-info">
-                <h3 class="video-title">${escapeHtml(video.title)}</h3>
-                <div class="video-meta">
-                    <span class="upload-time">${formatTime(video.uploaded_at)}</span>
-                </div>
-            </div>
-        `;
-
-        videoCard.addEventListener('click', () => playVideo(video));
-        videoGrid.appendChild(videoCard);
+// 本地存储函数
+async function saveVideoToLocalDB(videoData) {
+    const localVideos = JSON.parse(localStorage.getItem('local_videos') || '[]');
+    localVideos.push({
+        id: Date.now(),
+        ...videoData,
+        uploaded_at: new Date().toISOString()
     });
-
-    mainContainer.innerHTML = '';
-    mainContainer.appendChild(videoGrid);
+    localStorage.setItem('local_videos', JSON.stringify(localVideos));
+    return true;
 }
-
-function showEmptyState() {
-    mainContainer.innerHTML = '<div class="empty-state">无视频</div>';
-}
-
-// 播放视频
-function playVideo(video) {
-    console.log('播放视频:', video);
-    currentVideoId = video.id;
-    
+       
     // 更新页面信息
     document.getElementById('videoPageTitle').textContent = video.title;
     document.getElementById('videoPageDescription').textContent = video.description || '暂无描述';
@@ -1016,4 +1090,4 @@ function formatTime(timestamp) {
         }
     </script>
 </body>
-</html>
+</.html>
