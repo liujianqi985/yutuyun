@@ -1090,7 +1090,12 @@ function secureInput(input) {
     return true;
 }
        
-        // ==================== 配置信息 ====================
+       
+
+        // ==================== 全局变量 ====================
+        let currentVideos = [];
+        let currentVideoId = null;
+ // ==================== 配置信息 ====================
         const R2_CONFIG = {
             accessKeyId: 'f594e10953f9ec122d430f064a19b5b4',
             secretAccessKey: '9ed7b12db60f31f9462caec00b7080918e3888365df70&c5fa7e0d49723f2dc',
@@ -1103,11 +1108,7 @@ function secureInput(input) {
             accountId: '1cdc780ead6a1ae7e3931e043874700e',
             apiToken: 'k51ruznXy8h6eU07_PKKySYajtmXLPS23JyCXk_M'
         };
-
-        // ==================== 全局变量 ====================
-        let currentVideos = [];
-        let currentVideoId = null;
-
+       
         // ==================== DOM 元素 ====================
         const uploadBtn = document.getElementById('uploadBtn');
         const uploadModal = document.getElementById('uploadModal');
@@ -1332,150 +1333,48 @@ function secureInput(input) {
             }
         });
 
-        // ==================== R2 上传函数 ====================
-        async function uploadToR2(file, objectKey) {
-            const formData = new FormData();
-            formData.append('file', file);
+        /// ==================== 通过Worker上传 ====================
+async function uploadToR2(file, objectKey) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('objectKey', objectKey);
 
-            try {
-                const response = await fetch(`${R2_CONFIG.endpoint}/${R2_CONFIG.bucket}/${objectKey}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Basic ${btoa(`${R2_CONFIG.accessKeyId}:${R2_CONFIG.secretAccessKey}`)}`
-                    },
-                    body: file
-                });
+    try {
+        // 🔧 替换成你的 Worker 网址（创建Worker后更新这个）
+        const workerUrl = 'https://yutuyun-api.liuhaohao13920078681.workers.dev/upload';
+        
+        const response = await fetch(workerUrl, {
+            method: 'POST',
+            body: formData
+        });
 
-                if (!response.ok) {
-                    throw new Error('R2 上传失败');
-                }
-
-                return objectKey;
-            } catch (error) {
-                throw new Error('R2 上传失败: ' + error.message);
-            }
+        if (!response.ok) {
+            throw new Error('上传失败: ' + (await response.text()));
         }
 
-        // ==================== D1 数据库操作 ====================
-        async function saveVideoToD1(videoData) {
-            const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${D1_CONFIG.accountId}/d1/database/${D1_CONFIG.databaseId}/query`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${D1_CONFIG.apiToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    sql: `INSERT INTO videos (filename, file_size, r2_object_key, title, description, mime_type, uploaded_at) 
-                          VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
-                    params: [
-                        videoData.filename,
-                        videoData.file_size,
-                        videoData.r2_object_key,
-                        videoData.title,
-                        videoData.description || '',
-                        videoData.mime_type
-                    ]
-                })
-            });
-
-            const result = await response.json();
-            if (!result.success) {
-                throw new Error('数据库保存失败');
-            }
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.error || '上传失败');
         }
 
-        async function loadVideos() {
-            try {
-                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${D1_CONFIG.accountId}/d1/database/${D1_CONFIG.databaseId}/query`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${D1_CONFIG.apiToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        sql: "SELECT * FROM videos ORDER BY uploaded_at DESC"
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success && result.result.length > 0) {
-                    currentVideos = result.result;
-                    displayVideos(currentVideos);
-                } else {
-                    showEmptyState();
-                }
-            } catch (error) {
-                console.error('加载视频失败:', error);
-                showEmptyState();
-            }
-        }
-
-        // ==================== 视频显示功能 ====================
-        function displayVideos(videos) {
-            const emptyState = document.querySelector('.empty-state');
-            if (emptyState) {
-                emptyState.remove();
-            }
-
-            const videoGrid = document.createElement('div');
-            videoGrid.className = 'video-grid';
-            videoGrid.id = 'videoGrid';
-
-            const sortOptions = document.createElement('div');
-            sortOptions.className = 'sort-options';
-            sortOptions.id = 'sortOptions';
-            sortOptions.style.display = 'block';
-            sortOptions.innerHTML = `
-                <select id="sortSelect">
-                    <option value="time">最新上传</option>
-                    <option value="name">按标题排序</option>
-                </select>
-            `;
-
-            videos.forEach(video => {
-                const videoCard = document.createElement('div');
-                videoCard.className = 'video-card';
-                videoCard.setAttribute('data-video-id', video.id);
-                videoCard.innerHTML = `
-                    <div class="video-thumbnail">
-                        <div class="play-overlay">
-                            <i class="fas fa-play"></i>
-                        </div>
-                    </div>
-                    <div class="video-info">
-                        <h3 class="video-title">${escapeHtml(video.title)}</h3>
-                        <div class="video-meta">
-                            <span class="upload-time">${formatTime(video.uploaded_at)}</span>
-                        </div>
-                    </div>
-                `;
-
-                videoCard.addEventListener('click', () => {
-                    playVideo(video);
-                });
-
-                videoGrid.appendChild(videoCard);
-            });
-
-            mainContainer.innerHTML = '';
-            mainContainer.appendChild(sortOptions);
-            mainContainer.appendChild(videoGrid);
-
-            // 排序功能
-            const sortSelect = document.getElementById('sortSelect');
-            sortSelect.addEventListener('change', (e) => {
-                const sortedVideos = [...videos];
-                if (e.target.value === 'name') {
-                    sortedVideos.sort((a, b) => a.title.localeCompare(b.title));
-                } else {
-                    sortedVideos.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
-                }
-                displayVideos(sortedVideos);
-            });
-        }
-
-        function showEmptyState() {
-            mainContainer.innerHTML = '<div class="empty-state">无视频</div>';
+        return objectKey;
+    } catch (error) {
+        throw new Error('上传失败: ' + error.message);
+    }
+}
+        // ==================== 保存视频信息 ====================
+async function saveVideoToD1(videoData) {
+    // 现在简化处理，先保存到本地存储
+    const localVideos = JSON.parse(localStorage.getItem('local_videos') || '[]');
+    localVideos.push({
+        id: Date.now(),
+        ...videoData,
+        uploaded_at: new Date().toISOString()
+    });
+    localStorage.setItem('local_videos', JSON.stringify(localVideos));
+    
+    return true;
+}
         }
 
         // ==================== 视频播放功能 ====================
