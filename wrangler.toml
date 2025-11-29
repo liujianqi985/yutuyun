@@ -1,5 +1,4 @@
 name = "yutuyun-api"
-compatibility_date = "2024-11-28"
 main = "worker.js"
 
 [[r2_buckets]]
