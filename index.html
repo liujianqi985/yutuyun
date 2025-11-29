@@ -463,272 +463,299 @@
             submitBtn.disabled = true;
         }
 
-        // ==================== B2 上传处理 ====================
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const file = videoFileInput.files[0];
-            const title = videoTitleInput.value.trim();
-            const description = videoDescriptionInput.value.trim();
-            
-            if (!file || !title) {
-                alert('请选择视频文件并填写标题！');
-                return;
-            }
+     // ==================== GitHub 配置 ====================
+const GITHUB_CONFIG = {
+    username: 'ilujianqi985',
+    repo: 'yutuyun', 
+    token: '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'
+};
 
-            try {
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
-                submitBtn.disabled = true;
+// ==================== 全局变量====================
+let currentVideos = [];
+let currentVideoId = null;
 
-                // 生成唯一文件名
-                const fileExt = file.name.split('.').pop();
-                const objectKey = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+// ==================== DOM 元素 ====================  const uploadBtn = document.getElementById('uploadBtn');
+        const uploadModal = document.getElementById('uploadModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelUpload = document.getElementById('cancelUpload');
+        const uploadForm = document.getElementById('uploadForm');
+        const videoFileInput = document.getElementById('videoFile');
+        const fileDropZone = document.getElementById('fileDropZone');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const videoTitleInput = document.getElementById('videoTitle');
+        const videoDescriptionInput = document.getElementById('videoDescription');
+        const submitBtn = document.getElementById('submitBtn');
+        const mainContainer = document.getElementById('mainPage');
+        const videoPage = document.getElementById('videoPage');
+        const backBtn = document.getElementById('backBtn');
+        const mainVideo = document.getElementById('mainVideo');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.querySelector('.search-btn');
 
-                // 上传到 B2
-                await uploadToB2(file, objectKey);
 
-                // 保存视频信息
-                await saveVideoInfo({
-                    filename: file.name,
-                    file_size: file.size,
-                    b2_object_key: objectKey,
-                    title: title,
-                    description: description,
-                    mime_type: file.type
-                });
+// ==================== 初始化 ====================
+document.addEventListener('DOMContentLoaded', function() {
+    loadVideos();
+});
 
-                alert('视频上传成功！');
-                closeUploadModal();
-                loadVideos();
+// ==================== 上传功能 ====================
+// [这里保持你原来的上传界面代码不变]
 
-            } catch (error) {
-                console.error('上传失败:', error);
-                alert('上传失败：' + error.message);
-            } finally {
-                submitBtn.innerHTML = '<i class="fas fa-upload"></i> 开始上传';
-                submitBtn.disabled = false;
-            }
+// ==================== GitHub API 上传处理 ====================
+uploadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const file = videoFileInput.files[0];
+    const title = videoTitleInput.value.trim();
+    const description = videoDescriptionInput.value.trim();
+    
+    if (!file || !title) {
+        alert('请选择视频文件并填写标题！');
+        return;
+    }
+
+    try {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+        submitBtn.disabled = true;
+
+        // 生成唯一文件名
+        const fileExt = file.name.split('.').pop();
+        const fileName = `video-${Date.now()}.${fileExt}`;
+        const filePath = `videos/${fileName}`;
+
+        // 将文件转换为Base64
+        const fileBase64 = await fileToBase64(file);
+
+        // 上传到 GitHub
+        await uploadToGitHub(filePath, fileBase64, `添加视频: ${title}`);
+
+        // 保存视频信息到本地存储
+        await saveVideoInfo({
+            filename: fileName,
+            file_path: filePath,
+            file_size: file.size,
+            title: title,
+            description: description,
+            mime_type: file.type,
+            github_url: `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/main/${filePath}`
         });
 
-        // ==================== B2 上传函数 ====================
-        async function uploadToB2(file, objectKey) {
-            try {
-                console.log('🚀 开始B2上传流程...');
-                
-                // 1. 获取B2授权
-                const authResponse = await fetch('https://api.backblazeb2.com/b2api/v2/b2_authorize_account', {
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(B2_CONFIG.keyID + ':' + B2_CONFIG.applicationKey)
-                    }
-                });
-                
-                if (!authResponse.ok) throw new Error('B2认证失败');
-                
-                const authData = await authResponse.json();
-                
-                // 2. 获取上传URL
-                const uploadUrlResponse = await fetch(authData.apiUrl + '/b2api/v2/b2_get_upload_url', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': authData.authorizationToken,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ bucketId: B2_CONFIG.bucketId })
-                });
-                
-                if (!uploadUrlResponse.ok) throw new Error('获取上传URL失败');
-                
-                const uploadData = await uploadUrlResponse.json();
-                
-                // 3. 直接上传文件到B2
-                const uploadResponse = await fetch(uploadData.uploadUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': uploadData.authorizationToken,
-                        'X-Bz-File-Name': encodeURIComponent(objectKey),
-                        'Content-Type': file.type || 'b2/x-auto',
-                        'X-Bz-Content-Sha1': 'do_not_verify'
-                    },
-                    body: file
-                });
-                
-                const result = await uploadResponse.json();
-                
-                if (result.fileId) {
-                    console.log('🎉 B2上传成功');
-                    return objectKey;
-                } else {
-                    throw new Error('B2上传失败');
-                }
-                
-            } catch (error) {
-                console.error('❌ B2上传错误:', error);
-                throw new Error('B2上传失败: ' + error.message);
-            }
+        alert('视频上传成功！');
+        closeUploadModal();
+        loadVideos();
+
+    } catch (error) {
+        console.error('上传失败:', error);
+        alert('上传失败：' + error.message);
+    } finally {
+        submitBtn.innerHTML = '<i class="fas fa-upload"></i> 开始上传';
+        submitBtn.disabled = false;
+    }
+});
+
+// ==================== GitHub API 函数 ====================
+async function uploadToGitHub(path, content, commitMessage) {
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${path}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `token ${GITHUB_CONFIG.token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message: commitMessage,
+            content: content.split(',')[1] // 移除 data:video/mp4;base64, 前缀
+        })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'GitHub 上传失败');
+    }
+
+    return await response.json();
+}
+
+async function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// ==================== 视频信息管理 ====================
+async function saveVideoInfo(videoData) {
+    const videos = JSON.parse(localStorage.getItem('github_videos') || '[]');
+    videos.push({
+        id: Date.now(),
+        ...videoData,
+        uploaded_at: new Date().toISOString()
+    });
+    localStorage.setItem('github_videos', JSON.stringify(videos));
+    return true;
+}
+
+async function loadVideos() {
+    try {
+        const videos = JSON.parse(localStorage.getItem('github_videos') || '[]');
+        if (videos.length > 0) {
+            currentVideos = videos;
+            displayVideos(currentVideos);
+        } else {
+            showEmptyState();
         }
+    } catch (error) {
+        console.error('加载视频失败:', error);
+        showEmptyState();
+    }
+}
 
-        // ==================== 视频信息管理 ====================
-        async function saveVideoInfo(videoData) {
-            // 在本地存储记录视频信息
-            const videos = JSON.parse(localStorage.getItem('b2_videos') || '[]');
-            videos.push({
-                id: Date.now(),
-                ...videoData,
-                uploaded_at: new Date().toISOString()
-            });
-            localStorage.setItem('b2_videos', JSON.stringify(videos));
-            return true;
+// ==================== 视频显示功能 ====================
+function displayVideos(videos) {
+    const emptyState = document.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    const videoGrid = document.createElement('div');
+    videoGrid.className = 'video-grid';
+    videoGrid.id = 'videoGrid';
+
+    const sortOptions = document.createElement('div');
+    sortOptions.className = 'sort-options';
+    sortOptions.id = 'sortOptions';
+    sortOptions.style.display = 'block';
+    sortOptions.innerHTML = `
+        <select id="sortSelect">
+            <option value="time">最新上传</option>
+            <option value="name">按标题排序</option>
+        </select>
+    `;
+
+    videos.forEach(video => {
+        const videoCard = document.createElement('div');
+        videoCard.className = 'video-card';
+        videoCard.setAttribute('data-video-id', video.id);
+        videoCard.innerHTML = `
+            <div class="video-thumbnail">
+                <div class="play-overlay">
+                    <i class="fas fa-play"></i>
+                </div>
+            </div>
+            <div class="video-info">
+                <h3 class="video-title">${escapeHtml(video.title)}</h3>
+                <div class="video-meta">
+                    <span class="upload-time">${formatTime(video.uploaded_at)}</span>
+                </div>
+            </div>
+        `;
+
+        videoCard.addEventListener('click', () => playVideo(video));
+        videoGrid.appendChild(videoCard);
+    });
+
+    mainContainer.innerHTML = '';
+    mainContainer.appendChild(sortOptions);
+    mainContainer.appendChild(videoGrid);
+
+    // 排序功能
+    const sortSelect = document.getElementById('sortSelect');
+    sortSelect.addEventListener('change', (e) => {
+        const sortedVideos = [...videos];
+        if (e.target.value === 'name') {
+            sortedVideos.sort((a, b) => a.title.localeCompare(b.title));
+        } else {
+            sortedVideos.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
         }
+        displayVideos(sortedVideos);
+    });
+}
 
-        async function loadVideos() {
-            try {
-                // 从本地存储加载视频信息
-                const videos = JSON.parse(localStorage.getItem('b2_videos') || '[]');
-                if (videos.length > 0) {
-                    currentVideos = videos;
-                    displayVideos(currentVideos);
-                } else {
-                    showEmptyState();
-                }
-            } catch (error) {
-                console.error('加载视频失败:', error);
-                showEmptyState();
-            }
-        }
+function showEmptyState() {
+    mainContainer.innerHTML = '<div class="empty-state">无视频</div>';
+}
 
-        // ==================== 视频显示功能 ====================
-        function displayVideos(videos) {
-            const emptyState = document.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
+// ==================== 视频播放功能 ====================
+function playVideo(video) {
+    currentVideoId = video.id;
+    
+    // 更新视频页面信息
+    document.getElementById('videoPageTitle').textContent = video.title;
+    document.getElementById('videoPageDescription').textContent = video.description || '暂无描述';
+    document.getElementById('videoUploadTime').textContent = `上传时间: ${formatTime(video.uploaded_at)}`;
+    document.getElementById('videoSize').textContent = `文件大小: ${formatFileSize(video.file_size)}`;
+    
+    // 设置视频源（GitHub Raw 直链）
+    mainVideo.src = video.github_url;
+    
+    // 切换到视频页面
+    mainContainer.style.display = 'none';
+    videoPage.style.display = 'block';
+}
 
-            const videoGrid = document.createElement('div');
-            videoGrid.className = 'video-grid';
-            videoGrid.id = 'videoGrid';
+backBtn.addEventListener('click', () => {
+    videoPage.style.display = 'none';
+    mainContainer.style.display = 'block';
+    mainVideo.pause();
+    mainVideo.src = '';
+});
 
-            const sortOptions = document.createElement('div');
-            sortOptions.className = 'sort-options';
-            sortOptions.id = 'sortOptions';
-            sortOptions.style.display = 'block';
-            sortOptions.innerHTML = `
-                <select id="sortSelect">
-                    <option value="time">最新上传</option>
-                    <option value="name">按标题排序</option>
-                </select>
-            `;
+// ==================== 工具函数 ====================
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-            videos.forEach(video => {
-                const videoCard = document.createElement('div');
-                videoCard.className = 'video-card';
-                videoCard.setAttribute('data-video-id', video.id);
-                videoCard.innerHTML = `
-                    <div class="video-thumbnail">
-                        <div class="play-overlay">
-                            <i class="fas fa-play"></i>
-                        </div>
-                    </div>
-                    <div class="video-info">
-                        <h3 class="video-title">${escapeHtml(video.title)}</h3>
-                        <div class="video-meta">
-                            <span class="upload-time">${formatTime(video.uploaded_at)}</span>
-                        </div>
-                    </div>
-                `;
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+    if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+    
+    return date.toLocaleDateString('zh-CN');
+}
 
-                videoCard.addEventListener('click', () => playVideo(video));
-                videoGrid.appendChild(videoCard);
-            });
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
-            mainContainer.innerHTML = '';
-            mainContainer.appendChild(sortOptions);
-            mainContainer.appendChild(videoGrid);
+function resetForm() {
+    uploadForm.reset();
+    fileInfo.style.display = 'none';
+    submitBtn.disabled = true;
+}
 
-            // 排序功能
-            const sortSelect = document.getElementById('sortSelect');
-            sortSelect.addEventListener('change', (e) => {
-                const sortedVideos = [...videos];
-                if (e.target.value === 'name') {
-                    sortedVideos.sort((a, b) => a.title.localeCompare(b.title));
-                } else {
-                    sortedVideos.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
-                }
-                displayVideos(sortedVideos);
-            });
-        }
+// ==================== 搜索功能 ====================
+searchBtn.addEventListener('click', performSearch);
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') performSearch();
+});
 
-        function showEmptyState() {
-            mainContainer.innerHTML = '<div class="empty-state">无视频</div>';
-        }
+function performSearch() {
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    if (!searchTerm) {
+        loadVideos();
+        return;
+    }
 
-        // ==================== 视频播放功能 ====================
-        function playVideo(video) {
-            currentVideoId = video.id;
-            
-            // 更新视频页面信息
-            document.getElementById('videoPageTitle').textContent = video.title;
-            document.getElementById('videoPageDescription').textContent = video.description || '暂无描述';
-            document.getElementById('videoUploadTime').textContent = `上传时间: ${formatTime(video.uploaded_at)}`;
-            document.getElementById('videoSize').textContent = `文件大小: ${formatFileSize(video.file_size)}`;
-            
-            // 设置视频源（B2直链）
-            const videoUrl = `https://f005.backblazeb2.com/file/yutuyun-videos/${video.b2_object_key}`;
-            mainVideo.src = videoUrl;
-            
-            // 切换到视频页面
-            mainContainer.style.display = 'none';
-            videoPage.style.display = 'block';
-        }
+    const filteredVideos = currentVideos.filter(video => 
+        video.title.toLowerCase().includes(searchTerm) ||
+        (video.description && video.description.toLowerCase().includes(searchTerm))
+    );
 
-        backBtn.addEventListener('click', () => {
-            videoPage.style.display = 'none';
-            mainContainer.style.display = 'block';
-            mainVideo.pause();
-            mainVideo.src = '';
-        });
-
-        // ==================== 工具函数 ====================
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            const now = new Date();
-            const diff = now - date;
-            
-            if (diff < 60000) return '刚刚';
-            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-            if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
-            
-            return date.toLocaleDateString('zh-CN');
-        }
-
-        // ==================== 搜索功能 ====================
-        searchBtn.addEventListener('click', performSearch);
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') performSearch();
-        });
-
-        function performSearch() {
-            const searchTerm = searchInput.value.trim().toLowerCase();
-            if (!searchTerm) {
-                loadVideos();
-                return;
-            }
-
-            const filteredVideos = currentVideos.filter(video => 
-                video.title.toLowerCase().includes(searchTerm) ||
-                (video.description && video.description.toLowerCase().includes(searchTerm))
-            );
-
-            if (filteredVideos.length === 0) {
-                mainContainer.innerHTML = '<div class="empty-state">未找到相关视频</div>';
-            } else {
-                displayVideos(filteredVideos);
-            }
-        }
-    </script>
-</body>
-  </html>
+    if (filteredVideos.length === 0) {
+        mainContainer.innerHTML = '<div class="empty-state">未找到相关视频</div>';
+    } else {
+        displayVideos(filteredVideos);
+    }
+}.
