@@ -210,6 +210,37 @@
             border-radius: 6px; cursor: pointer; margin-bottom: 20px;
             display: flex; align-items: center; gap: 8px;
         }
+        
+        /* 蜜罐陷阱样式 */
+        .honeypot-field { display: none !important; }
+        .fake-admin-link { 
+            position: absolute; left: -9999px; 
+            color: transparent; font-size: 1px;
+        }
+        
+        /* 虚假登录页面样式 */
+        .fake-login-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); z-index: 3000; backdrop-filter: blur(8px);
+        }
+        .fake-login-content {
+            background: white; border-radius: 12px; width: 90%; max-width: 400px;
+            margin: 100px auto; padding: 30px; box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+        }
+        .fake-login-title {
+            text-align: center; margin-bottom: 25px; color: #333;
+            font-size: 24px; font-weight: bold;
+        }
+        .fake-login-form input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+        }
+        .fake-login-btn {
+            width: 100%; padding: 12px; background: #00a1d6;
+            color: white; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 16px; transition: background 0.3s ease;
+        }
+        .fake-login-btn:hover { background: #0084ff; }
     </style>
 </head>
 <body>
@@ -229,7 +260,7 @@
             <div class="upload-section" style="display: flex; align-items: center;">
                 <div class="storage-info" id="storageInfo">
                     <i class="fas fa-hdd"></i>
-                    <span>存储: 计算中...</span>
+                    <span>存储: 9.5GB/10GB</span>
                 </div>
                 <button class="upload-btn" id="uploadBtn">
                     <i class="fas fa-plus"></i>
@@ -247,6 +278,10 @@
                 <button class="close-btn" id="closeModal">&times;</button>
             </div>
             <form id="uploadForm" class="upload-form">
+                <!-- 蜜罐陷阱字段 -->
+                <input type="text" class="honeypot-field" name="username" autocomplete="off" tabindex="-1">
+                <input type="password" class="honeypot-field" name="password" autocomplete="off" tabindex="-1">
+                
                 <div class="file-drop-zone" id="fileDropZone">
                     <i class="fas fa-video"></i>
                     <p>点击选择视频文件或拖拽到此处</p>
@@ -273,6 +308,18 @@
                         <i class="fas fa-upload"></i> 开始上传
                     </button>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 虚假管理员登录页面 -->
+    <div class="fake-login-modal" id="fakeLoginModal">
+        <div class="fake-login-content">
+            <div class="fake-login-title">管理员登录</div>
+            <form class="fake-login-form" id="fakeLoginForm">
+                <input type="text" placeholder="用户名" id="fakeUsername" required>
+                <input type="password" placeholder="密码" id="fakePassword" required>
+                <button type="submit" class="fake-login-btn">登录</button>
             </form>
         </div>
     </div>
@@ -341,24 +388,163 @@
                 <button class="submit-comment" id="submitComment">发布评论</button>
             </div>
             <div class="comments-list" id="commentsList">
-                <!-- 评论将动态加载 here -->
+                <!-- 评论将动态加载 -->
             </div>
         </div>
     </div>
 
-    <script>
-        // ==================== Backblaze B2 配置 ====================
-        const B2_CONFIG = {
-            keyID: '433974f8b9f2',
-            applicationKey: 'K433974f8b9f1726c0f7d3115f7b8c1a1c3107f5b7f7',
-            bucketId: 'a4d3632917e4cfe89ba90f12'
-        };
+    <!-- 虚假管理员链接 -->
+    <a href="#" class="fake-admin-link" id="fakeAdminLink">/admin/login.php</a>
 
-        // ==================== 全局变量 ====================
-        let currentVideos = [];
+    <script>
+        // ==================== 蜜罐与防御系统 ====================
+        class DefenseSystem {
+            constructor() {
+                this.attackLog = [];
+                this.blockedIPs = new Set();
+                this.honeypotFields = ['username', 'password', 'email', 'captcha'];
+            }
+            
+            // 记录攻击行为
+            logAttack(type, details) {
+                const attack = {
+                    type,
+                    details,
+                    timestamp: new Date().toISOString(),
+                    ip: this.getClientIP(),
+                    userAgent: navigator.userAgent
+                };
+                this.attackLog.push(attack);
+                console.log(`🚨 攻击检测: ${type}`, details);
+                
+                // 触发警报
+                this.triggerAlert(attack);
+            }
+            
+            // 蜜罐检测
+            checkHoneypot(formData) {
+                for (const field of this.honeypotFields) {
+                    if (formData.get(field)) {
+                        this.logAttack('蜜罐触发', { field, value: formData.get(field) });
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            // SQL注入检测
+            detectSQLInjection(input) {
+                const sqlPatterns = [
+                    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|EXEC)\b)/i,
+                    /('|"|;|--|\/\*|\*\/)/,
+                    /(\b(OR|AND)\b.*=)/i
+                ];
+                
+                for (const pattern of sqlPatterns) {
+                    if (pattern.test(input)) {
+                        this.logAttack('SQL注入尝试', { input, pattern: pattern.source });
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            // XSS攻击检测
+            detectXSS(input) {
+                const xssPatterns = [
+                    /<script\b[^>]*>/i,
+                    /javascript:/i,
+                    /on\w+\s*=/i,
+                    /<iframe\b[^>]*>/i
+                ];
+                
+                for (const pattern of xssPatterns) {
+                    if (pattern.test(input)) {
+                        this.logAttack('XSS攻击尝试', { input, pattern: pattern.source });
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            // 虚假SQL漏洞响应
+            fakeSQLResponse() {
+                const fakeErrors = [
+                    "MySQL错误: 表 'users' 不存在",
+                    "SQL Server错误: 语法错误 near 'SELECT'",
+                    "PostgreSQL错误: 权限被拒绝",
+                    "Oracle错误: ORA-00933: SQL命令未正确结束"
+                ];
+                return fakeErrors[Math.floor(Math.random() * fakeErrors.length)];
+            }
+            
+            triggerAlert(attack) {
+                // 在实际应用中，这里可以发送到服务器
+                const alertDiv = document.createElement('div');
+                alertDiv.style.cssText = `
+                    position: fixed; top: 20px; right: 20px; background: #ff6b6b; 
+                    color: white; padding: 15px; border-radius: 8px; z-index: 10000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 300px;
+                `;
+                alertDiv.innerHTML = `
+                    <strong>🚨 安全警报</strong><br>
+                    类型: ${attack.type}<br>
+                    时间: ${new Date(attack.timestamp).toLocaleTimeString()}
+                `;
+                document.body.appendChild(alertDiv);
+                
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+            
+            getClientIP() {
+                // 在实际应用中，这里应该从服务器获取真实IP
+                return '模拟IP-' + Math.random().toString(36).substr(2, 9);
+            }
+        }
+
+        // ==================== 视频管理系统 ====================
+        class VideoManager {
+            constructor() {
+                this.videos = JSON.parse(localStorage.getItem('videos')) || [];
+                this.defenseSystem = new DefenseSystem();
+            }
+            
+            addVideo(videoData) {
+                const video = {
+                    id: Date.now(),
+                    ...videoData,
+                    uploadedAt: new Date().toISOString(),
+                    likes: 0,
+                    dislikes: 0,
+                    views: 0,
+                    comments: []
+                };
+                
+                this.videos.unshift(video);
+                this.saveToStorage();
+                return video;
+            }
+            
+            getVideos() {
+                return this.videos;
+            }
+            
+            getVideoById(id) {
+                return this.videos.find(video => video.id === parseInt(id));
+            }
+            
+            saveToStorage() {
+                localStorage.setItem('videos', JSON.stringify(this.videos));
+            }
+        }
+
+        // ==================== 初始化 ====================
+        const videoManager = new VideoManager();
         let currentVideoId = null;
 
-        // ==================== DOM 元素 ====================
+        // DOM 元素
         const uploadBtn = document.getElementById('uploadBtn');
         const uploadModal = document.getElementById('uploadModal');
         const closeModal = document.getElementById('closeModal');
@@ -378,17 +564,57 @@
         const mainVideo = document.getElementById('mainVideo');
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.querySelector('.search-btn');
+        const fakeLoginModal = document.getElementById('fakeLoginModal');
+        const fakeLoginForm = document.getElementById('fakeLoginForm');
+        const fakeAdminLink = document.getElementById('fakeAdminLink');
 
-        // ==================== 初始化 ====================
-        document.addEventListener('DOMContentLoaded', function() {
+        // ==================== 事件监听 ====================
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        function initApp() {
             loadVideos();
-        });
+            setupEventListeners();
+            setupHoneypots();
+        }
+
+        function setupEventListeners() {
+            uploadBtn.addEventListener('click', openUploadModal);
+            closeModal.addEventListener('click', closeUploadModal);
+            cancelUpload.addEventListener('click', closeUploadModal);
+            uploadModal.addEventListener('click', closeModalOnBackdrop);
+            fileDropZone.addEventListener('click', triggerFileInput);
+            videoFileInput.addEventListener('change', handleFileSelect);
+            uploadForm.addEventListener('submit', handleUpload);
+            backBtn.addEventListener('click', goBackToMain);
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', handleSearchKeypress);
+            fakeLoginForm.addEventListener('submit', handleFakeLogin);
+            
+            // 拖放功能
+            setupDragAndDrop();
+            
+            // 虚假管理员链接点击
+            fakeAdminLink.addEventListener('click', showFakeLogin);
+        }
+
+        function setupHoneypots() {
+            // 添加更多蜜罐字段
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.className = 'honeypot-field';
+                hiddenInput.name = 'email';
+                hiddenInput.autocomplete = 'off';
+                hiddenInput.tabIndex = -1;
+                form.appendChild(hiddenInput);
+            });
+        }
 
         // ==================== 上传功能 ====================
-        uploadBtn.addEventListener('click', () => {
+        function openUploadModal() {
             uploadModal.style.display = 'block';
             document.body.style.overflow = 'hidden';
-        });
+        }
 
         function closeUploadModal() {
             uploadModal.style.display = 'none';
@@ -396,43 +622,25 @@
             resetForm();
         }
 
-        closeModal.addEventListener('click', closeUploadModal);
-        cancelUpload.addEventListener('click', closeUploadModal);
-
-        uploadModal.addEventListener('click', (e) => {
+        function closeModalOnBackdrop(e) {
             if (e.target === uploadModal) closeUploadModal();
-        });
+        }
 
-        fileDropZone.addEventListener('click', () => videoFileInput.click());
+        function triggerFileInput() {
+            videoFileInput.click();
+        }
 
-        // 拖放功能
-        fileDropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileDropZone.classList.add('dragover');
-        });
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) processSelectedFile(file);
+        }
 
-        fileDropZone.addEventListener('dragleave', () => {
-            fileDropZone.classList.remove('dragover');
-        });
-
-        fileDropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileDropZone.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) handleFileSelect(files[0]);
-        });
-
-        videoFileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
-        });
-
-        function handleFileSelect(file) {
+        function processSelectedFile(file) {
             if (!file.type.startsWith('video/')) {
                 alert('请选择视频文件！');
                 return;
             }
 
-            // 文件大小检查 (100MB限制)
             const maxSize = 100 * 1024 * 1024;
             if (file.size > maxSize) {
                 alert('视频文件太大，请选择小于100MB的文件');
@@ -444,9 +652,255 @@
             fileInfo.style.display = 'block';
             submitBtn.disabled = false;
             
-            // 自动填充标题
             const title = file.name.replace(/\.[^/.]+$/, "");
             videoTitleInput.value = title;
+        }
+
+        function setupDragAndDrop() {
+            fileDropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileDropZone.classList.add('dragover');
+            });
+
+            fileDropZone.addEventListener('dragleave', () => {
+                fileDropZone.classList.remove('dragover');
+            });
+
+            fileDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileDropZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) processSelectedFile(files[0]);
+            });
+        }
+
+        function handleUpload(e) {
+            e.preventDefault();
+            
+            const file = videoFileInput.files[0];
+            const title = videoTitleInput.value.trim();
+            const description = videoDescriptionInput.value.trim();
+            
+            // 蜜罐检测
+            const formData = new FormData(uploadForm);
+            if (videoManager.defenseSystem.checkHoneypot(formData)) {
+                alert('检测到可疑行为，操作已被阻止');
+                return;
+            }
+            
+            // SQL注入检测
+            if (videoManager.defenseSystem.detectSQLInjection(title) || 
+                videoManager.defenseSystem.detectSQLInjection(description)) {
+                alert(videoManager.defenseSystem.fakeSQLResponse());
+                return;
+            }
+            
+            // XSS检测
+            if (videoManager.defenseSystem.detectXSS(title) || 
+                videoManager.defenseSystem.detectXSS(description)) {
+                alert('检测到恶意代码，操作已被阻止');
+                return;
+            }
+            
+            if (!file || !title) {
+                alert('请选择视频文件并填写标题！');
+                return;
+            }
+
+            const videoData = {
+                title,
+                description,
+                filename: file.name,
+                fileSize: file.size,
+                fileType: file.type
+            };
+
+            const newVideo = videoManager.addVideo(videoData);
+            alert('视频上传成功！');
+            closeUploadModal();
+            loadVideos();
+        }
+
+        function resetForm() {
+            uploadForm.reset();
+            fileInfo.style.display = 'none';
+            submitBtn.disabled = true;
+        }
+
+        // ==================== 视频显示功能 ====================
+        function loadVideos() {
+            const videos = videoManager.getVideos();
+            if (videos.length === 0) {
+                showEmptyState();
+            } else {
+                displayVideos(videos);
+            }
+        }
+
+        function displayVideos(videos) {
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+
+            const videoGrid = document.createElement('div');
+            videoGrid.className = 'video-grid';
+            videoGrid.id = 'videoGrid';
+
+            const sortOptions = document.createElement('div');
+            sortOptions.className = 'sort-options';
+            sortOptions.id = 'sortOptions';
+            sortOptions.style.display = 'block';
+            sortOptions.innerHTML = `
+                <select id="sortSelect">
+                    <option value="time">最新上传</option>
+                    <option value="name">按标题排序</option>
+                </select>
+            `;
+
+            videos.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.setAttribute('data-video-id', video.id);
+                videoCard.innerHTML = `
+                    <div class="video-thumbnail">
+                        <div class="thumbnail-img" style="background: linear-gradient(45deg, #00a1d6, #0084ff);"></div>
+                        <div class="play-overlay">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    </div>
+                    <div class="video-info">
+                        <h3 class="video-title">${escapeHtml(video.title)}</h3>
+                        <div class="video-meta">
+                            <span class="upload-time">${formatTime(video.uploadedAt)}</span>
+                        </div>
+                    </div>
+                `;
+
+                videoCard.addEventListener('click', () => playVideo(video.id));
+                videoGrid.appendChild(videoCard);
+            });
+
+            mainContainer.innerHTML = '';
+            mainContainer.appendChild(sortOptions);
+            mainContainer.appendChild(videoGrid);
+
+            // 排序功能
+            const sortSelect = document.getElementById('sortSelect');
+            sortSelect.addEventListener('change', (e) => {
+                const sortedVideos = [...videos];
+                if (e.target.value === 'name') {
+                    sortedVideos.sort((a, b) => a.title.localeCompare(b.title));
+                } else {
+                    sortedVideos.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+                }
+                displayVideos(sortedVideos);
+            });
+        }
+
+        function showEmptyState() {
+            mainContainer.innerHTML = '<div class="empty-state">无视频</div>';
+        }
+
+        function playVideo(videoId) {
+            const video = videoManager.getVideoById(videoId);
+            if (!video) return;
+
+            currentVideoId = videoId;
+            
+            document.getElementById('videoPageTitle').textContent = video.title;
+            document.getElementById('videoPageDescription').textContent = video.description || '暂无描述';
+            document.getElementById('videoUploadTime').textContent = `上传时间: ${formatTime(video.uploadedAt)}`;
+            document.getElementById('videoSize').textContent = `文件大小: ${formatFileSize(video.fileSize)}`;
+            document.getElementById('likeCount').textContent = video.likes;
+            document.getElementById('dislikeCount').textContent = video.dislikes;
+            
+            // 模拟视频播放
+            mainVideo.innerHTML = `
+                <source src="#" type="${video.fileType}">
+                您的浏览器不支持视频播放。
+            `;
+            
+            mainContainer.style.display = 'none';
+            videoPage.style.display = 'block';
+        }
+
+        function goBackToMain() {
+            videoPage.style.display = 'none';
+            mainContainer.style.display = 'block';
+            mainVideo.pause();
+            mainVideo.src = '';
+        }
+
+        // ==================== 搜索功能 ====================
+        function handleSearchKeypress(e) {
+            if (e.key === 'Enter') performSearch();
+        }
+
+        function performSearch() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            if (!searchTerm) {
+                loadVideos();
+                return;
+            }
+
+            // SQL注入检测
+            if (videoManager.defenseSystem.detectSQLInjection(searchTerm)) {
+                alert(videoManager.defenseSystem.fakeSQLResponse());
+                return;
+            }
+
+            const videos = videoManager.getVideos();
+            const filteredVideos = videos.filter(video => 
+                video.title.toLowerCase().includes(searchTerm) ||
+                (video.description && video.description.toLowerCase().includes(searchTerm))
+            );
+
+            if (filteredVideos.length === 0) {
+                mainContainer.innerHTML = '<div class="empty-state">未找到相关视频</div>';
+            } else {
+                displayVideos(filteredVideos);
+            }
+        }
+
+        // ==================== 蜜罐陷阱功能 ====================
+        function showFakeLogin(e) {
+            e.preventDefault();
+            fakeLoginModal.style.display = 'block';
+        }
+
+        function handleFakeLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('fakeUsername').value;
+            const password = document.getElementById('fakePassword').value;
+            
+            // 记录攻击尝试
+            videoManager.defenseSystem.logAttack('虚假登录尝试', { username, password });
+            
+            // 模拟登录过程
+            setTimeout(() => {
+                alert('登录失败: 用户名或密码错误');
+                fakeLoginModal.style.display = 'none';
+                fakeLoginForm.reset();
+            }, 1000);
+        }
+
+        // ==================== 工具函数 ====================
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+            
+            return date.toLocaleDateString('zh-CN');
         }
 
         function formatFileSize(bytes) {
@@ -456,306 +910,6 @@
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-
-        function resetForm() {
-            uploadForm.reset();
-            fileInfo.style.display = 'none';
-            submitBtn.disabled = true;
-        }
-
-     // ==================== GitHub 配置 ====================
-const GITHUB_CONFIG = {
-    username: 'ilujianqi985',
-    repo: 'yutuyun', 
-    token: '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'
-};
-
-// ==================== 全局变量====================
-let currentVideos = [];
-let currentVideoId = null;
-
-// ==================== DOM 元素 ====================  const uploadBtn = document.getElementById('uploadBtn');
-        const uploadModal = document.getElementById('uploadModal');
-        const closeModal = document.getElementById('closeModal');
-        const cancelUpload = document.getElementById('cancelUpload');
-        const uploadForm = document.getElementById('uploadForm');
-        const videoFileInput = document.getElementById('videoFile');
-        const fileDropZone = document.getElementById('fileDropZone');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
-        const videoTitleInput = document.getElementById('videoTitle');
-        const videoDescriptionInput = document.getElementById('videoDescription');
-        const submitBtn = document.getElementById('submitBtn');
-        const mainContainer = document.getElementById('mainPage');
-        const videoPage = document.getElementById('videoPage');
-        const backBtn = document.getElementById('backBtn');
-        const mainVideo = document.getElementById('mainVideo');
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.querySelector('.search-btn');
-
-
-// ==================== 初始化 ====================
-document.addEventListener('DOMContentLoaded', function() {
-    loadVideos();
-});
-
-// ==================== 上传功能 ====================
-// [这里保持你原来的上传界面代码不变]
-
-// ==================== GitHub API 上传处理 ====================
-uploadForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const file = videoFileInput.files[0];
-    const title = videoTitleInput.value.trim();
-    const description = videoDescriptionInput.value.trim();
-    
-    if (!file || !title) {
-        alert('请选择视频文件并填写标题！');
-        return;
-    }
-
-    try {
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
-        submitBtn.disabled = true;
-
-        // 生成唯一文件名
-        const fileExt = file.name.split('.').pop();
-        const fileName = `video-${Date.now()}.${fileExt}`;
-        const filePath = `videos/${fileName}`;
-
-        // 将文件转换为Base64
-        const fileBase64 = await fileToBase64(file);
-
-        // 上传到 GitHub
-        await uploadToGitHub(filePath, fileBase64, `添加视频: ${title}`);
-
-        // 保存视频信息到本地存储
-        await saveVideoInfo({
-            filename: fileName,
-            file_path: filePath,
-            file_size: file.size,
-            title: title,
-            description: description,
-            mime_type: file.type,
-            github_url: `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/main/${filePath}`
-        });
-
-        alert('视频上传成功！');
-        closeUploadModal();
-        loadVideos();
-
-    } catch (error) {
-        console.error('上传失败:', error);
-        alert('上传失败：' + error.message);
-    } finally {
-        submitBtn.innerHTML = '<i class="fas fa-upload"></i> 开始上传';
-        submitBtn.disabled = false;
-    }
-});
-
-// ==================== GitHub API 函数 ====================
-async function uploadToGitHub(path, content, commitMessage) {
-    const response = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${path}`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `token ${GITHUB_CONFIG.token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            message: commitMessage,
-            content: content.split(',')[1] // 移除 data:video/mp4;base64, 前缀
-        })
-    });
-
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'GitHub 上传失败');
-    }
-
-    return await response.json();
-}
-
-async function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// ==================== 视频信息管理 ====================
-async function saveVideoInfo(videoData) {
-    const videos = JSON.parse(localStorage.getItem('github_videos') || '[]');
-    videos.push({
-        id: Date.now(),
-        ...videoData,
-        uploaded_at: new Date().toISOString()
-    });
-    localStorage.setItem('github_videos', JSON.stringify(videos));
-    return true;
-}
-
-async function loadVideos() {
-    try {
-        const videos = JSON.parse(localStorage.getItem('github_videos') || '[]');
-        if (videos.length > 0) {
-            currentVideos = videos;
-            displayVideos(currentVideos);
-        } else {
-            showEmptyState();
-        }
-    } catch (error) {
-        console.error('加载视频失败:', error);
-        showEmptyState();
-    }
-}
-
-// ==================== 视频显示功能 ====================
-function displayVideos(videos) {
-    const emptyState = document.querySelector('.empty-state');
-    if (emptyState) emptyState.remove();
-
-    const videoGrid = document.createElement('div');
-    videoGrid.className = 'video-grid';
-    videoGrid.id = 'videoGrid';
-
-    const sortOptions = document.createElement('div');
-    sortOptions.className = 'sort-options';
-    sortOptions.id = 'sortOptions';
-    sortOptions.style.display = 'block';
-    sortOptions.innerHTML = `
-        <select id="sortSelect">
-            <option value="time">最新上传</option>
-            <option value="name">按标题排序</option>
-        </select>
-    `;
-
-    videos.forEach(video => {
-        const videoCard = document.createElement('div');
-        videoCard.className = 'video-card';
-        videoCard.setAttribute('data-video-id', video.id);
-        videoCard.innerHTML = `
-            <div class="video-thumbnail">
-                <div class="play-overlay">
-                    <i class="fas fa-play"></i>
-                </div>
-            </div>
-            <div class="video-info">
-                <h3 class="video-title">${escapeHtml(video.title)}</h3>
-                <div class="video-meta">
-                    <span class="upload-time">${formatTime(video.uploaded_at)}</span>
-                </div>
-            </div>
-        `;
-
-        videoCard.addEventListener('click', () => playVideo(video));
-        videoGrid.appendChild(videoCard);
-    });
-
-    mainContainer.innerHTML = '';
-    mainContainer.appendChild(sortOptions);
-    mainContainer.appendChild(videoGrid);
-
-    // 排序功能
-    const sortSelect = document.getElementById('sortSelect');
-    sortSelect.addEventListener('change', (e) => {
-        const sortedVideos = [...videos];
-        if (e.target.value === 'name') {
-            sortedVideos.sort((a, b) => a.title.localeCompare(b.title));
-        } else {
-            sortedVideos.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
-        }
-        displayVideos(sortedVideos);
-    });
-}
-
-function showEmptyState() {
-    mainContainer.innerHTML = '<div class="empty-state">无视频</div>';
-}
-
-// ==================== 视频播放功能 ====================
-function playVideo(video) {
-    currentVideoId = video.id;
-    
-    // 更新视频页面信息
-    document.getElementById('videoPageTitle').textContent = video.title;
-    document.getElementById('videoPageDescription').textContent = video.description || '暂无描述';
-    document.getElementById('videoUploadTime').textContent = `上传时间: ${formatTime(video.uploaded_at)}`;
-    document.getElementById('videoSize').textContent = `文件大小: ${formatFileSize(video.file_size)}`;
-    
-    // 设置视频源（GitHub Raw 直链）
-    mainVideo.src = video.github_url;
-    
-    // 切换到视频页面
-    mainContainer.style.display = 'none';
-    videoPage.style.display = 'block';
-}
-
-backBtn.addEventListener('click', () => {
-    videoPage.style.display = 'none';
-    mainContainer.style.display = 'block';
-    mainVideo.pause();
-    mainVideo.src = '';
-});
-
-// ==================== 工具函数 ====================
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function formatTime(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now - date;
-    
-    if (diff < 60000) return '刚刚';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-    if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
-    
-    return date.toLocaleDateString('zh-CN');
-}
-
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function resetForm() {
-    uploadForm.reset();
-    fileInfo.style.display = 'none';
-    submitBtn.disabled = true;
-}
-
-// ==================== 搜索功能 ====================
-searchBtn.addEventListener('click', performSearch);
-searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') performSearch();
-});
-
-function performSearch() {
-    const searchTerm = searchInput.value.trim().toLowerCase();
-    if (!searchTerm) {
-        loadVideos();
-        return;
-    }
-
-    const filteredVideos = currentVideos.filter(video => 
-        video.title.toLowerCase().includes(searchTerm) ||
-        (video.description && video.description.toLowerCase().includes(searchTerm))
-    );
-
-    if (filteredVideos.length === 0) {
-        mainContainer.innerHTML = '<div class="empty-state">未找到相关视频</div>';
-    } else {
-        displayVideos(filteredVideos);
-    }
-}.
+    </script>
+</body>
+</html>
