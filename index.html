@@ -1340,7 +1340,7 @@ async function uploadToR2(file, objectKey) {
     formData.append('objectKey', objectKey);
 
     try {
-        // 🔧 使用你已部署的 Worker 网址
+        // 
         const workerUrl = 'https://adc.liuhaohao13920078681.workers.dev/upload';
         
         console.log('开始上传到Worker:', workerUrl);
@@ -1368,30 +1368,30 @@ async function uploadToR2(file, objectKey) {
         console.error('上传异常:', error);
         throw new Error('上传失败: ' + error.message);
     }
-}
-        // ==================== 视频播放功能 ====================
         function playVideo(video) {
-            currentVideoId = video.id;
-            
-            // 更新视频页面信息
-            videoPageTitle.textContent = video.title;
-            videoPageDescription.textContent = video.description || '暂无描述';
-            videoUploadTime.textContent = `上传时间: ${formatTime(video.uploaded_at)}`;
-            videoSize.textContent = `文件大小: ${formatFileSize(video.file_size)}`;
-            
-            // 设置视频源
-            const videoUrl = `${R2_CONFIG.endpoint}/${R2_CONFIG.bucket}/${video.r2_object_key}`;
-            mainVideo.src = videoUrl;
-            
-            // 切换到视频页面
-            mainContainer.style.display = 'none';
-            videoPage.style.display = 'block';
-            
-            // 加载评论
-            loadComments(video.id);
-            
-            // 更新播放次数
-            updateVideoViews(video.id);
+    console.log('🎬 播放视频:', video);
+    currentVideoId = video.id;
+    
+    // 更新视频页面信息
+    videoPageTitle.textContent = video.title;
+    videoPageDescription.textContent = video.description || '暂无描述';
+    videoUploadTime.textContent = `上传时间: ${formatTime(video.uploaded_at)}`;
+    videoSize.textContent = `文件大小: ${formatFileSize(video.file_size)}`;
+    
+    // 🎯 使用公共URL播放视频
+    const publicVideoUrl = `https://pub-e91aeea110e2439bac3d380a8de576f5.r2.dev/${video.r2_object_key}`;
+    console.log('视频URL:', publicVideoUrl);
+    mainVideo.src = publicVideoUrl;
+    
+    // 切换到视频页面
+    mainContainer.style.display = 'none';
+    videoPage.style.display = 'block';
+    
+    // 加载评论
+    loadComments(video.id);
+    
+    // 更新播放次数
+    updateVideoViews(video.id);
         }
 
         backBtn.addEventListener('click', () => {
