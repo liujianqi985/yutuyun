@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>上传战绩</title>
+    <style>
+        body { font-family: system-ui; max-width: 600px; margin: 0 auto; padding: 20px; background: #0f0f0f; color: #eee; }
+        h1 { color: #ff6b6b; }
+        input, textarea, button { display: block; width: 100%; margin: 10px 0; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: white; }
+        button { background: #ff6b6b; color: black; font-weight: bold; border: none; cursor: pointer; }
+        #status { margin-top: 20px; padding: 10px; background: #1a1a1a; border-left: 3px solid #ff6b6b; }
+        a { color: #f0e68c; }
+    </style>
+</head>
+<body>
+    <h1>📤 上传新战绩</h1>
+    <p><a href="index.html">← 返回首页</a></p>
+
+    <input type="file" id="fileInput" accept="image/*">
+    <textarea id="caption" placeholder="写点说明（比如：今天杀了60个）" rows="4"></textarea>
+    <button onclick="uploadFile()">上传</button>
+    <div id="status">就绪</div>
+
+    <script>
+        // ⚠️ 把这里换成你的 Worker 地址
+        const WORKER_URL = 'https://r2-upload-signer.你的用户名.workers.dev';
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const caption = document.getElementById('caption').value.trim();
+
+            if (!file) {
+                document.getElementById('status').innerText = '请先选择图片';
+                return;
+            }
+
+            document.getElementById('status').innerText = '⏳ 获取上传地址...';
+
+            try {
+                // 1. 从 Worker 获取签名 URL
+                const workerUrl = `${WORKER_URL}?filename=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type)}`;
+                const res = await fetch(workerUrl);
+                
+                if (!res.ok) {
+                    throw new Error(`签名失败: ${res.status}`);
+                }
+
+                const { url, key } = await res.json();
+                console.log('获取到签名URL，key:', key);
+
+                // 2. 直接上传文件到 R2
+                document.getElementById('status').innerText = '⏳ 上传中...';
+                const uploadRes = await fetch(url, {
+                    method: 'PUT',
+                    body: file,
+                    headers: {
+                        'Content-Type': file.type
+                    }
+                });
+
+                if (uploadRes.ok) {
+                    document.getElementById('status').innerHTML = `✅ 上传成功！<br>文件名: ${key}<br>说明: ${caption || '无'}`;
+                    fileInput.value = '';
+                    document.getElementById('caption').value = '';
+                } else {
+                    throw new Error(`上传失败: ${uploadRes.status}`);
+                }
+            } catch (e) {
+                document.getElementById('status').innerText = '❌ 出错: ' + e.message;
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>
